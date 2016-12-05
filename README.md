@@ -1,6 +1,6 @@
 #GerCompiler - A simple, german Linux-Compiler
-#--Made as extension to GerInterpreter (www.sites.google.com/site/gerinterpreter) 
-#--GerInterpreter has more Commands, use it as long, as my Project isn't finished :)
+--Made as extension to GerInterpreter (www.sites.google.com/site/gerinterpreter) 
+--GerInterpreter has more Commands, use it as long, as my Project isn't finished :)
 
 SETUP: To compile the sources, you'll need Lazarus-Pascal (www.lazarus.org).
 
