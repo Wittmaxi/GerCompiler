@@ -535,7 +535,7 @@ begin
     parseLength := length (m_args);
     textAccum   := '';
     momChar     := '';
-     while counter < parseLength do
+     while (counter < parseLength) and (momChar <> ')') do
      begin
       inc (counter, 1);
       momChar:= copy (m_args, counter, 1);
@@ -585,10 +585,6 @@ begin
                                    momChar:= copy (m_args, counter, 1);
                                    textAccum += momChar;
                               end;
-                           handleWriteAsm(isText, textAccum);
-                           isText   := false;
-                           textAccum:= '';
-                           momChar  := '';
                       end;
       end;
 end;
