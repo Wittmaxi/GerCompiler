@@ -1,16 +1,17 @@
 #GerCompiler - A simple, german, lightweigth Linux-Compiler
---Made as extension to GerInterpreter (www.sites.google.com/site/gerinterpreter) 
---GerInterpreter has more Commands, use it as long, as my Project isn't finished :)
+--Made as extension to GerInterpreter (www.sites.google.com/site/gerinterpreter) </br>
+--GerInterpreter has more Commands, use it as long, as my Project isn't finished :)</br>
 
-SETUP: To compile the sources, you'll need Lazarus-Pascal (www.lazarus.org).
+SETUP: To compile the sources, you'll need Lazarus-Pascal (www.lazarus.org).</br>
 
-If you directly want to start the Compiler, use the StartCompiler.sh script, which sets-up everything nicely.
+If you directly want to start the Compiler, use the StartCompiler.sh script, which sets-up everything nicely.</br>
 PLEASE, DON'T upload Files, as this is a Project I want to drive by my own (until my Project is done)
 
 #Possible Commands:
+</br>
+</br>
 
-
-//These types of comments are legal
+//These types of comments are legal</br>
 schreiben ("Text") //This writes the Text given in " </br>
 schreiben (nzeile) //This writes a new Line </br>
 schreiben (varname) //writes the variable </br> </br>
@@ -23,6 +24,6 @@ punktsetzen (punkt1) //sets a goto-Label </br>
 gehezu (punkt1) //goto </br>
  </br>
 
-Please give me some Feedback, but don't post direct Answers to my Questions, as I prefer working alone at this school Project </br> (I'm in the 8th school-year)
+Please give me some Feedback, but don't post direct Answers to my Questions, </br>as I prefer working alone at this school Project </br> (I'm in the 8th school-year)
  </br>
 HAVE FUN USING IT!
