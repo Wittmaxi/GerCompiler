@@ -66,6 +66,8 @@ type
                    var m_args   : string;
              private //private methods
                    procedure compute   ();
+                   function  getTextInString (i: string) : string;
+                   function  quoteClosed (i:string) : boolean;
              ///////////////////WRITE//////////////////////////////////////////
              private    //WRITE //these are the Methods of the Write-Routine.
                    procedure parseText ();
@@ -640,8 +642,9 @@ begin
                //checks everything
                if (copy (val, 0, 1) = '"') then
                   begin
-                      if (copy (val, length(val), 1) = '"') then
+                      if quoteClosed (m_args) then
                          begin
+                              val := getTextInString(m_args);
                               handleVarAsm(val, name, 'text');
                          end else
                              begin
@@ -649,7 +652,7 @@ begin
                              end;
                   end else
                   begin
-                        val:= copy (m_args, pos ('=', m_args) + 1, pos (')', m_args) - pos ('=', m_args) -1);
+                        val:= getTextInString(m_args);
                         if typeCheck (val) = 'zahl' then
                                     begin
                                         handleVarAsm(val, name, 'zahl');
@@ -710,10 +713,6 @@ procedure TCommand.handleVarAsm (i: string; name: string; itype: string);
 var counter: integer = 1;
 var total  : integer = 0;
 begin
-    if pos ('"', 'spacer' + i) <> 0 then //if its not a string
-       begin
-             i:= copy (i, pos ('"', i) +1, length (i) - 2); //copies the value without the "
-       end;
     total := length (i);
     if iType = 'zahl' then
        begin
@@ -772,6 +771,62 @@ begin
                                             Form1.setAssemblerText ('jmp ' + newArg);
                                          end;
                               end;
+end;
+
+function TCommand.getTextInString (i: string) : string;
+var textAccum   : string  = '';
+var counter     : integer = 0;
+var parseLen    : integer = 0;
+var numberQuotes: integer = 0;
+var momChar     : string  = '';
+begin
+     parseLen := length (i);
+     while counter < parselen do
+           begin
+              momChar := copy (i, counter, 1);    //copie the momentan character
+                if numberQuotes = 1 then
+                   begin
+                      textAccum += momChar;         //if theres a quote, take the text
+                   end;
+                if momChar = '"' then
+                   begin                                                        //if its a quote, increase the couter
+                      inc (numberQuotes);
+                   end;
+                if numberQuotes = 2 then
+                   begin
+                      break;                         //if the quote is closed, break out of the loop
+                   end;
+                inc (counter);
+           end;
+     getTextInString := textAccum;
+end;
+
+function TCommand.quoteClosed (i: string) : boolean;
+var counter     : integer = 0;
+var parseLen    : integer = 0;
+var numberQuotes: integer = 0;
+var momChar     : string  = '';
+begin
+     parseLen := length (i);
+     while counter < parselen do
+           begin
+              quoteClosed := false;
+              momChar := copy (i, counter, 1);    //copie the momentan character
+                if momChar = '"' then
+                   begin                                                        //if its a quote, increase the couter
+                      inc (numberQuotes);
+                   end;
+                if numberQuotes = 1 then
+                   begin
+                      quoteClosed := false;
+                   end;
+                if numberQuotes = 2 then
+                   begin
+                      quoteClosed := true;
+                      break;                         //if the quote is closed, break out of the loop
+                   end;
+                inc (counter);
+           end;
 end;
 
 {$R *.lfm}
