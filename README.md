@@ -16,7 +16,7 @@ schreiben ("Text") //This writes the Text given in " </br>
 schreiben (nzeile) //This writes a new Line </br>
 schreiben (varname) //writes the variable </br>
 schreiben ("Text" + varname) //You can concatenate strings </br>
-//You can concatenate as many arguements, as you want and eny type of arguements. 
+//You can concatenate as many arguements, as you want and eny type of arguements. </br>
 schreiben ("Text" + "Text" + nzeile + "Text" + varname + "HELLO WORLD :)" + nzeile)
 
 neuevariable (var1 = "HI") //creates a new string-variable with the Value of HI </br>
