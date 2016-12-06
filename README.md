@@ -2,7 +2,7 @@
 --Made as extension to GerInterpreter (www.sites.google.com/site/gerinterpreter) </br>
 --GerInterpreter has more Commands, use it as long, as my Project isn't finished :)</br>
 
-SETUP: To compile the sources, you'll need Lazarus-Pascal (www.lazarus.org).</br>
+SETUP: To compile the sources, you'll need Lazarus-Pascal (www.lazarus-ide.org).</br>
 
 If you directly want to start the Compiler, use the StartCompiler.sh script, which sets-up everything nicely.</br>
 PLEASE, DON'T upload Files, as this is a Project I want to drive by my own (until my Project is done)
