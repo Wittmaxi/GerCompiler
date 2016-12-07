@@ -186,7 +186,7 @@ begin
     setLength(textArray, 0);
     setAssemblerData('section .data');
     setAssemblerData('cmp_BLANK: db 0x0a');
-    setAssemblerData('cmp_interr: db "error, You have typed in a non-Integer Charakter!", 0x0a');
+    setAssemblerData('cmp_interr: db "error, You have typed in a non-Integer Character!", 0x0a');
     setAssemblerData('cmp_interrlen: equ $-cmp_interr');
     setAssemblerText('section .text');
     setAssemblerText('global _start');
@@ -312,7 +312,6 @@ begin
   end else
       begin //already choosen the destination
          synEdit1.Lines.saveToFile (saveDialog1.filename);
-         showmessage ('Projekt erfolgreich gespeichert :)');
       end;
 end;
 
@@ -409,7 +408,6 @@ end;
 //////////////////////////////////////////////////////////////////////////////////////////////////
 procedure TLine.compileLine();             //runs all of the Methods.
 begin
-   m_string := lowercase(m_string);
    getStringLength    ();                     // gets the length of the String-input
    deleteBLanks       ();                     //deletes all of the blank space inside the String.
    deleteComments     ();                     //deletes comments "//" inside of the text.
@@ -430,6 +428,10 @@ begin
      while ((counter < m_stringLength) and (not (m_stringLength = 0))) do//the 'Loop'
      begin
          momChar := copy (m_string, counter, 1);
+         if (not (isText)) and (momChar <> ' ') then
+         begin
+             m_string[counter] := lowercase (m_string[counter]);
+         end;
        if ((momChar = ' ') and (not(isText))) then//delete the blank space!
        begin
            delete (m_string, counter, 1);  //deletes the blank position
