@@ -66,8 +66,9 @@ type
                    var m_args   : string;
              private //private methods
                    procedure compute   ();
-                   function  getTextInString (i: string) : string;
-                   function  quoteClosed (i:string) : boolean;
+                   function  getTextInString   (i: string) : string;
+                   function  quoteClosed       (i: string) : boolean;
+                   function  getTextWOBrackets (i: string) : string;
              ///////////////////WRITE//////////////////////////////////////////
              private    //WRITE //these are the Methods of the Write-Routine.
                    procedure parseText ();
@@ -88,6 +89,10 @@ type
              ///////////////////GOTO//////////////////////////////////////
              private //functions
                      procedure parseGoto     ();
+             private //variables
+             ///////////////////INPUT/////////////////////////////////////
+             private //functions
+                     procedure handleInputAsm ();
              private //variables
 
     end;
@@ -307,6 +312,7 @@ begin
   end else
       begin //already choosen the destination
          synEdit1.Lines.saveToFile (saveDialog1.filename);
+         showmessage ('Projekt erfolgreich gespeichert :)');
       end;
 end;
 
@@ -470,6 +476,7 @@ begin
       'neuevariable': parseVar ();
       'punktsetzen' : parseGoto();
       'gehezu'      : parseGoto();
+      'eingeben'    : handleInputAsm();
       //default     : i dont know how the Functions called -.-
     end;
 end;
@@ -579,13 +586,20 @@ begin
                        dec (counter);
                            while (momChar <> '+') and (copy (m_args, counter+1, 1) <> ')') do
                               begin
+                                   inc (counter);
+                                   momChar:= copy (m_args, counter, 1);
                                   if momChar = '+' then
                                      begin
                                       break;
                                      end;
-                                   inc (counter);
-                                   momChar:= copy (m_args, counter, 1);
                                    textAccum += momChar;
+                              end;
+                           if (copy (m_args, counter+1, 1) <> ')') then
+                              begin
+                                   handleWriteAsm(isText, textAccum);
+                                   isText   := false;
+                                   textAccum:= '';
+                                   momChar  := '';
                               end;
                       end;
       end;
@@ -773,6 +787,10 @@ begin
                               end;
 end;
 
+//////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////GENERAL FUNCTIONS/////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////
+
 function TCommand.getTextInString (i: string) : string;
 var textAccum   : string  = '';
 var counter     : integer = 0;
@@ -783,14 +801,16 @@ begin
      parseLen := length (i);
      while counter < parselen do
            begin
-              momChar := copy (i, counter, 1);    //copie the momentan character
-                if numberQuotes = 1 then
-                   begin
-                      textAccum += momChar;         //if theres a quote, take the text
-                   end;
+              momChar := copy (i, counter, 1);    //copie the momentan
                 if momChar = '"' then
                    begin                                                        //if its a quote, increase the couter
                       inc (numberQuotes);
+                      inc (counter); //switches to the next char
+                      momChar := copy (i, counter, 1);
+                   end;
+                if numberQuotes = 1 then
+                   begin
+                      textAccum += momChar;         //if theres a quote, take the text
                    end;
                 if numberQuotes = 2 then
                    begin
@@ -827,6 +847,37 @@ begin
                    end;
                 inc (counter);
            end;
+end;
+
+procedure TCommand.handleInputAsm ();
+var varName : string;
+begin
+     varName := getTextWOBrackets (m_args);
+    if varDoesExist(varName) then
+        begin
+           if varTable [getVarIndex (varName), 2] = 'zahl' then //Integer-types
+               begin
+                  Form1.setAssemblerText('mov eax, 3');
+                  Form1.setAssemblerText('mov ebx, 1');
+                  Form1.setAssemblerText('mov ecx, ' + varName);
+                  Form1.setAssemblerText('mov edx, 9');
+                  Form1.setAssemblerText('int 80h'); //calls the Kernel
+                  Form1.setAssemblerText('mov eax, ' + varName); //moves the Pointer of varname into eax, which serves to pass an arguement
+                  Form1.setAssemblerText('call cmp_sorting');
+               end else
+                   begin
+                        Form1.setAssemblerText('mov eax, 3');
+                        Form1.setAssemblerText('mov ebx, 1');
+                        Form1.setAssemblerText('mov ecx, ' + varName);
+                        Form1.setAssemblerText('mov edx, 255');
+                        Form1.setAssemblerText('int 80h'); //calls the Kernel
+                   end;
+        end;
+end;
+
+function TCommand.getTextWOBrackets (i: string) : string; //get the Tex5 inside Brackets (Mainly, because m_args delivers the Brackets)
+begin
+     getTextWOBrackets := copy (i, 2, pos (')', i) - 2);
 end;
 
 {$R *.lfm}
