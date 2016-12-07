@@ -19,12 +19,19 @@ schreiben ("Text" + varname) //You can concatenate strings </br>
 //You can concatenate as many arguements, as you want and eny type of arguements. </br>
 schreiben ("Text" + "Text" + nzeile + "Text" + varname + "HELLO WORLD :)" + nzeile)
 
-neuevariable (var1 = "HI") //creates a new string-variable with the Value of HI </br>
+neuevariable (var1 = "HI") //creates a new string-variable with the Value of HI. Strings arent allowed </br>
+//to be longer than 255 Character </br>
 neuvariable (var2 = 42) //Creates a new Integer-Variable with the Answer to life (42) </br>
+//Integers arent allowed to be longer than 9 chars.</br>
 //Note, that Integer-variables aren't writeable due to a Unicode-glitch </br>
  </br>
 punktsetzen (punkt1) //sets a goto-Label </br>
 gehezu (punkt1) //goto </br>
+ </br>
+ </br>
+ eingeben (varname) //Inputs into the variable.
+ 
+ </br>
  </br>
 
 
