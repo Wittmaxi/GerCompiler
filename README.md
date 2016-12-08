@@ -9,6 +9,7 @@ PLEASE, DON'T upload Files, as this is a Project I want to drive by my own (unti
 
 #Possible Commands:
 </br>
+<span bgcolor = "#eeeeee">
 </br>`
 //These types of comments are legal</br>
 schreiben ("Text") //This writes the Text given in " </br>
@@ -31,7 +32,7 @@ gehezu (punkt1) //goto </br>
  eingeben (varname) //Inputs into the variable.`
  </br>
  </br>
-
+</span>
 
 The executable is in the same folder, as your source-code. Run it in the Terminal with ./programm
 
