@@ -10,7 +10,7 @@ PLEASE, DON'T upload Files, as this is a Project I want to drive by my own (unti
 #Possible Commands:
 </br>
 </br>
-
+</code>
 //These types of comments are legal</br>
 schreiben ("Text") //This writes the Text given in " </br>
 schreiben (nzeile) //This writes a new Line </br>
@@ -31,6 +31,8 @@ gehezu (punkt1) //goto </br>
  </br>
  eingeben (varname) //Inputs into the variable.
  
+ 
+ </code>
  </br>
  </br>
 
