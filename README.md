@@ -9,6 +9,7 @@ PLEASE, DON'T upload Files, as this is a Project I want to drive by my own (unti
 
 #Possible Commands:
 </br>
+<h4>
 </br>         
 //These types of comments are legal</br>
 schreiben ("Text") //This writes the Text given in " </br>
@@ -25,7 +26,7 @@ neuvariable (var2 = 42) //Creates a new Integer-Variable with the Answer to life
 //Note, that Integer-variables aren't writeable due to a Unicode-glitch </br>
  </br>
 punktsetzen (punkt1) //sets a goto-Label </br>
-gehezu (punkt1) //goto </br>
+gehezu (punkt1) //goto </br> </h4>
  </br>
  </br>
          
