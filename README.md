@@ -11,6 +11,7 @@ PLEASE, DON'T upload Files, as this is a Project I want to drive by my own (unti
 </br>
 </br>         
 //These types of comments are legal</br>
+//The compiler (shouldnt) be case-sensitive </br>
 schreiben ("Text") //This writes the Text given in " </br>
 schreiben (nzeile) //This writes a new Line </br>
 schreiben (varname) //writes the variable </br>
