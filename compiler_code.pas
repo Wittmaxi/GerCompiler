@@ -152,6 +152,20 @@ begin
      synEdit3.lines.add ('mov eax, 1');
      synEdit3.lines.add ('mov ebx, 0');
      synEdit3.lines.add ('int 80h');
+     synEdit3.lines.add ('cmp_strToInt:');
+     synEdit3.lines.add ('mov ebx, 0');
+     synEdit3.lines.add ('mov ebx, 0');
+     synEdit3.lines.add ('cmp_conversion_loop:');
+     synEdit3.lines.add ('cmp BYTE[eax], 0');
+     synEdit3.lines.add ('jz cmp_leave_loop');
+     synEdit3.lines.add ('sub byte[eax], 48');
+     synEdit3.lines.add ('inc eax');
+     synEdit3.Lines.add ('inc ebx');
+     synEdit3.lines.add ('cmp ebx, 9');
+     synedit3.lines.add ('jge cmp_leave_loop');
+     synEdit3.lines.add ('jmp cmp_conversion_loop');
+     synEdit3.lines.add ('cmp_leave_loop:');
+     synEdit3.lines.add ('ret');
 end;
 
 procedure TForm1.createFunctions ();
@@ -188,6 +202,7 @@ begin
     setAssemblerData('cmp_BLANK: db 0x0a');
     setAssemblerData('cmp_interr: db "error, You have typed in a non-Integer Character!", 0x0a');
     setAssemblerData('cmp_interrlen: equ $-cmp_interr');
+    setAssemblerData('cmp_buffer: times 9 db 0x00');
     setAssemblerText('section .text');
     setAssemblerText('global _start');
     setAssemblerText('_start:');
@@ -662,6 +677,7 @@ begin
                          begin
                               val := getTextInString(m_args);
                               handleVarAsm(val, name, 'text');
+                              varTable [length (vartable)-1, 2]:= 'text';
                          end else
                              begin
                                 Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Du hast eine Textsequenz nicht formgemäß geschlossen.');
@@ -671,6 +687,7 @@ begin
                         val:= getTextInString(m_args);
                         if typeCheck (val) = 'zahl' then
                                     begin
+                                        varTable [length (vartable)-1, 2]:= 'zahl';
                                         handleVarAsm(val, name, 'zahl');
                                     end else
                                      begin
@@ -853,6 +870,7 @@ end;
 
 procedure TCommand.handleInputAsm ();
 var varName : string;
+var counter : integer = 0;
 begin
      varName := getTextWOBrackets (m_args);
     if varDoesExist(varName) then
@@ -866,6 +884,7 @@ begin
                   Form1.setAssemblerText('int 80h'); //calls the Kernel
                   Form1.setAssemblerText('mov eax, ' + varName); //moves the Pointer of varname into eax, which serves to pass an arguement
                   Form1.setAssemblerText('call cmp_sorting');
+                  Form1.setAssemblerText('mov [' + varName + '], eax');
                end else
                    begin
                         Form1.setAssemblerText('mov eax, 3');
