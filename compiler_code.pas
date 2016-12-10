@@ -58,12 +58,17 @@ type
 
     TCommand = class     //just a groupment of the different Commands, to keep the Class TLine as small as possible :)
              public      //setters and getters
-                   procedure setCommand (var command: string);
-                   procedure setArgs    (var args   : string);
+                   procedure setCommand (command: string);
+                   procedure setArgs    (args   : string);
+                   procedure setFullLine(line   : string);
                    procedure reset      ();
+                   procedure proceedKeyW();
              private    //private members
-                   var m_command: string;
-                   var m_args   : string;
+                   var m_command  : string;
+                   var m_args     : string;
+                   var m_fullLine : string;
+                   var mainSet    : boolean;
+                   var indentStack: array of array [1 .. 2] of string; //type|lineNumber of start//Used for begin-end; sequences.
              private //private methods
                    procedure compute   ();
                    function  getTextInString   (i: string) : string;
@@ -94,7 +99,14 @@ type
              private //functions
                      procedure handleInputAsm ();
              private //variables
+             //////////////////BEGIN...END////////////////////////////////
+             private
 
+             private
+             //////////////////IF-STATEMENTS//////////////////////////////
+             private
+
+             private
     end;
 
         TLine = class
@@ -494,7 +506,7 @@ begin
       'punktsetzen' : parseGoto();
       'gehezu'      : parseGoto();
       'eingeben'    : handleInputAsm();
-      //default     : i dont know how the Functions called -.-
+      else            proceedKeyW();
     end;
 end;
 
@@ -899,6 +911,11 @@ end;
 function TCommand.getTextWOBrackets (i: string) : string; //get the Tex5 inside Brackets (Mainly, because m_args delivers the Brackets)
 begin
      getTextWOBrackets := copy (i, 2, pos (')', i) - 2);
+end;
+
+////////////////////////////////PROCEED Functions with no Brackets ///////////////////////////////////
+procedure TCommand.proceedKeyW ();
+begin
 end;
 
 {$R *.lfm}
