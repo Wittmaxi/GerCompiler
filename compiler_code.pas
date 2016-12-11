@@ -40,17 +40,19 @@ type
     procedure createFunctions ();
     procedure createIntCheck  ();
   private  //private members of TForm1
-    var m_momLine : integer;
-    var bssArray  : array of string;
-    var dataArray : array of string;
-    var textArray : array of string;
-    var mistake   : boolean;
+    var m_momLine  : integer;
+    var bssArray   : array of string;
+    var dataArray  : array of string;
+    var textArray  : array of string;
+    var textFuncArr: array of string;
+    var mistake    : boolean;
  public  //public methods of TForm1
     //writes the different sections of the Assembler-code
     ////////////////////////////////////////////////////////////
-    procedure setAssemblerBss  (i :string);
-    procedure setAssemblerText (i :string);
-    procedure setAssemblerData (i :string);
+    procedure setAssemblerBss    (i :string);
+    procedure setAssemblerText   (i :string);
+    procedure setAssemblerTextFun(i :string);
+    procedure setAssemblerData   (i :string);
     ////////////////////////////////////////////////////////////
     procedure setMistake       (i :string);  //writes something into TSynedit2.
     function  getLineNumber    () :string;   //little ugly (because of the return-value), but time-saving
@@ -63,12 +65,18 @@ type
                    procedure setFullLine(line   : string);
                    procedure reset      ();
                    procedure proceedKeyW();
+                   function  noProtoUnsolved () : boolean;
              private    //private members
                    var m_command  : string;
                    var m_args     : string;
                    var m_fullLine : string;
                    var mainSet    : boolean;
+                   var lastFNIn   : string; //for the type of function.
+                   var functionIn : string; //the Function were momentary in.
+                   var needBegin  : boolean; //If a begin sequence is required on the next Line.
                    var indentStack: array of array [1 .. 2] of string; //type|lineNumber of start//Used for begin-end; sequences.
+                   var prototypes : array of array [1 .. 2] of string; //name|solved//If solved isnt, error
+                   var protoAllow : boolean; //If protoypes aren't allowed (after the first function)
              private //private methods
                    procedure compute   ();
                    function  getTextInString   (i: string) : string;
@@ -101,11 +109,21 @@ type
              private //variables
              //////////////////BEGIN...END////////////////////////////////
              private
-
+                     procedure handleBegin ();
              private
              //////////////////IF-STATEMENTS//////////////////////////////
              private
 
+             private
+             //Functions
+             private
+                 procedure handleMainFunc  ();
+             private
+             //function prototypes
+             private
+                 procedure handlePrototype ();
+                 function  protoExists     (i: string) : boolean; //if theres already a prototype called like this... SHIT MAN
+                 function  getProtoIndex   (i: string) : integer;
              private
     end;
 
@@ -246,6 +264,12 @@ begin
     textArray[length(textArray) - 1] := i;
 end;
 
+procedure TForm1.setAssemblerTextFun (i: string);
+begin
+     setLength (textFuncArr, length(textFuncArr) +1);
+     textArray[length(textFuncArr) - 1] := i;
+end;
+
 ///////////////////////////////////////////////////
 
 //writes from the array into the Edit-field.
@@ -305,6 +329,14 @@ begin
        Zeile.compileLine();
        inc              (m_momLine);
     end;
+    if NOT(Zeile.m_command.noProtoUnsolved()) then
+       begin
+            Form1.setMistake ('Zeile ' + Form1.getLineNumber + ': Eine Funktion wurde deklariert aber nicht beschrieben!');
+       end;
+    if NOT(Zeile.m_command.mainSet) then
+       begin
+            Form1.setMistake ('Zeile ' + Form1.getLineNumber + ': Es wurde keine Haupt-funktion deklariert!');
+       end;
 end;
 
 procedure TForm1.FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -441,6 +473,7 @@ begin
    getCommandInLine   ();                     //gets the COmmand inside the Line
    getArgInLine       ();                     //get the Argument inside the Line
    passComm           ();                     //passes the Command and the args into TCOMMAND
+   m_command.setFullLine(m_string);
    m_command.compute  ();                     //computes the passed arguements. AND FINALLY: The args get transformed to assembler!
 end;
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -487,27 +520,40 @@ end;
 //***************************************************************************************************//
 //###################################################################################################//
 
-procedure TCommand.setCommand(var command: string);
+procedure TCommand.setCommand(command: string);
 begin
     m_command:= command;
 end;
 
 
-procedure TCommand.setArgs (var args: string);
+procedure TCommand.setArgs (args: string);
 begin
     m_args:= args;
 end;
 
+procedure TCommand.setFullLine (line:String);
+begin
+    m_fullLine:= line;
+end;
+
 procedure TCommand.compute();
 begin
-    case lowercase(m_command) of
-      'schreiben'   : writeOut ();
-      'neuevariable': parseVar ();
-      'punktsetzen' : parseGoto();
-      'gehezu'      : parseGoto();
-      'eingeben'    : handleInputAsm();
-      else            proceedKeyW();
-    end;
+    if ((needBegin) and (m_fullLine <> 'begin')) and (NOT(m_fullLine = '')) then
+       begin
+          Form1.setMistake ('Zeile' + Form1.getLineNumber() + ': Fehler! "begin" benötigt!');
+       end
+    else
+      begin
+           case lowercase(m_command) of
+              'schreiben'   : writeOut ();
+              'neuevariable': parseVar ();
+              'punktsetzen' : parseGoto();
+              'gehezu'      : parseGoto();
+              'eingeben'    : handleInputAsm();
+              'prototyp'    : handlePrototype();
+              else            proceedKeyW();
+          end;
+      end;
 end;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -560,7 +606,9 @@ end;
 procedure TCommand.reset();
 begin
     m_numberMessages := 0;
-    setLength (varTable, 0);
+    protoAllow       := true;
+    setLength (varTable, 0);  //empties the array without destructing it!
+    setLength (prototypes, 0);//same
 end;
 
 procedure TCommand.parseText();     //In der Dritten Version... hoffen wir, dass ich das nich nochmal schreiben muss.
@@ -672,9 +720,9 @@ begin
      if varDoesExist (name) then
          begin
                 Form1.setMistake ('Zeile ' + Form1.getLineNumber () + ': Die Variable gibt es schon.');
-         end else if lowercase(copy (name, 0, 4)) = 'cmp_' then  //cmp-vars are reserved for the Compiler.
+         end else if (lowercase(copy (name, 0, 4)) = 'cmp_') or (lowercase (name) = 'ergebniss') then  //cmp-vars are reserved for the Compiler.
          begin
-                Form1.setMistake('Zeile ' + Form1.getLineNumber() + ': Variablen dürfen nicht mit cmp beginnen.');
+                Form1.setMistake('Zeile ' + Form1.getLineNumber() + ': Dein Variablenname ist reserviert!.');
          end else
          begin
                //starts off by savingthe variable-name into the Array.
@@ -915,7 +963,158 @@ end;
 
 ////////////////////////////////PROCEED Functions with no Brackets ///////////////////////////////////
 procedure TCommand.proceedKeyW ();
+var validKeyword : boolean = false;
 begin
+    if copy (m_fullLine, 0, 4) = 'leer' then //void functions
+        begin
+          validKeyWord := true;
+        end;
+    if copy (m_fullLine, 0, 5) = 'haupt' then //function main ()
+        begin
+          validKeyWord := true;
+          handleMainFunc();
+        end;
+    if copy (m_fullLine, 0, 4) = 'zahl' then //integer returning-functions
+        begin
+          validKeyWord := true;
+        end;
+    if copy (m_fullLine, 0, 4) = 'text' then
+        begin
+          validKeyWord := true;
+        end;
+    if m_fullline = 'anfang' then //begin .. end section
+        begin
+          validKeyWord := true;
+        end;
+    if m_fullLine = 'ende' then //begin...end section (end)
+        begin
+          validKeyWord := true;
+        end;
+    if varDoesExist (copy (m_fullLine, 0, pos ('=', m_fullline) + 1)) then  //for operations on variables
+        begin
+          validKeyWord := true;
+        end;
+    if (validKeyWord = false) and (m_fullLine <> '') then //if the Keyword was invalid
+        begin
+            Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Der Befehl ' + m_fullLine + ' wurde vom Compiler nicht erkannt!');
+        end;
+end;
+
+
+procedure TCommand.handleBegin ();
+var lengthOfStack : integer = 0;
+begin
+      lengthOfStack := length (indentStack);
+      needBegin     := false;
+      setLength (indentStack, lengthOfStack);
+      if functionIn = 'haupt' then
+          begin
+              indentStack[lengthOfStack, 1] := 'haupt';
+              indentStack[lengthOfStack, 2] := Form1.getLineNumber(); //As the array is a String...
+          end;
+end;
+
+procedure TCommand.handlePrototype ();
+var proto: string;
+begin
+     if protoAllow then
+         begin
+            proto := getTextWOBrackets(proto);  //gets the prototype without the surrounding brackets
+            if NOT(protoExists (proto)) then //checks, if there is already a protoype called like this.
+                begin
+                   setlength (prototypes, length (prototypes) +1);
+                   prototypes [length (prototypes) -1, 1] := proto;
+                   prototypes [length (prototypes) -1, 2] := '0'; //false, but theres no boolean -.-
+                end else
+                    begin
+                         Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Diese Funktion wurde schon benannt!');
+                    end;
+         end else
+             begin
+                  Form1.setMistake ('Zeile ' +  Form1.getLineNumber() + ': Nach einer Funktionsanweisung dürfen keine Prototypen für funktionen mehr kommen!');
+             end;
+end;
+
+function TCommand.protoExists (i: string) : boolean;
+var counter  : integer = 0;
+var lengthOf : integer = 0;
+var momString: string  = '';
+begin
+   protoExists  := false;
+     if i = 'haupt' then
+         begin
+            Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Die Funktion haupt braucht keinen Prototypen!');
+         end else
+             begin
+                  if prototypes = nil then
+                    begin
+                       protoExists := false; //if the array is empty, there obviously can't be a protoype already called like this
+                    end else
+                        begin
+                            lengthOf := length (prototypes) -1;
+                            while counter <= lengthOf do //iterates throug the array and does some logic
+                                  begin
+                                      momString := prototypes [counter, 1];
+                                      if momString = i then
+                                          begin
+                                             protoExists := true;
+                                             break;
+                                          end;
+                                      inc (counter);
+                                  end;
+                        end;
+             end;
+end;
+
+function TCommand.noProtoUnsolved () : boolean;
+var counter  : integer = 0;
+var lengthOf : integer = 0;
+begin
+  lengthOf := length (prototypes) -1;
+     if prototypes = nil then
+       begin
+          noProtoUnsolved := true; //if the array is empty, there obviously can't be a protoype already called like this
+       end else
+           begin
+               while counter <= lengthOf do
+                     begin
+                          if prototypes [counter, 2] = '0' then
+                              begin
+                                   noProtoUnsolved := false; // if theres an unsolved protoype
+                                   break;
+                              end;
+                          inc (counter);
+                     end;
+           end;
+end;
+
+function TCommand.getProtoIndex (i: string) : integer;
+var counter  : integer = 0;
+var lengthOf : integer = 0;
+begin
+  lengthOf := length (prototypes) -1;
+     if prototypes = nil then
+       begin
+          getProtoIndex := -1; //if the array is empty, throw an error-code!
+       end else
+           begin
+               while counter <= lengthOf do
+                     begin
+                          if prototypes [counter, 1] = i then
+                              begin
+                                   getProtoIndex := counter;
+                                   break;
+                              end;
+                          inc (counter);
+                     end;
+           end;
+end;
+
+procedure TCommand.handleMainFunc (); //for the Main-function...
+begin
+  protoAllow:= false; //no prototypes allowed anymore
+  mainSet   := true;
+  needBegin := true;
 end;
 
 {$R *.lfm}
