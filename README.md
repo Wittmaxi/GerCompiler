@@ -9,7 +9,8 @@ PLEASE, DON'T upload Files, as this is a Project I want to drive by my own (unti
 
 #Possible Commands:
 </br>
-</br>         
+</br>
+```
 //These types of comments are legal</br>
 //The compiler (shouldnt) be case-sensitive </br>
 schreiben ("Text") //This writes the Text given in " </br>
@@ -31,6 +32,8 @@ gehezu (punkt1) //goto </br>
  </br>
          
  eingeben (varname) //Inputs into the variable. </br>
+ 
+ ```
 
  
 The executable is in the same folder, as your source-code. Run it in the Terminal with ./programm
