@@ -77,6 +77,7 @@ type
                    var indentStack: array of array [1 .. 2] of string; //type|lineNumber of start//Used for begin-end; sequences.
                    var prototypes : array of array [1 .. 2] of string; //name|solved//If solved isnt, error
                    var protoAllow : boolean; //If protoypes aren't allowed (after the first function)
+                   var gotoArray  : array of array [1 .. 3] of string;  //name|scope|deployed
              private //private methods
                    procedure compute   ();
                    function  getTextInString   (i: string) : string;
@@ -102,6 +103,7 @@ type
              ///////////////////GOTO//////////////////////////////////////
              private //functions
                      procedure parseGoto     ();
+                     function gotoDeployed  () : boolean;
              private //variables
              ///////////////////INPUT/////////////////////////////////////
              private //functions
@@ -110,6 +112,7 @@ type
              //////////////////BEGIN...END////////////////////////////////
              private
                      procedure handleBegin ();
+                     procedure handleEnd   ();
              private
              //////////////////IF-STATEMENTS//////////////////////////////
              private
@@ -228,6 +231,7 @@ begin
     setLength(bssArray , 0);
     setLength(dataArray, 0);
     setLength(textArray, 0);
+    setLength(textFuncArr, 0);
     setAssemblerData('section .data');
     setAssemblerData('cmp_BLANK: db 0x0a');
     setAssemblerData('cmp_interr: db "error, You have typed in a non-Integer Character!", 0x0a');
@@ -267,7 +271,7 @@ end;
 procedure TForm1.setAssemblerTextFun (i: string);
 begin
      setLength (textFuncArr, length(textFuncArr) +1);
-     textArray[length(textFuncArr) - 1] := i;
+     textFuncArr[length(textFuncArr) - 1] := i;
 end;
 
 ///////////////////////////////////////////////////
@@ -303,9 +307,20 @@ begin
      end;
 
      //terminate run of the program without "segfaulting"! (System call sys_close)
+     synEdit3.Lines.add('jmp func_main');
+     synEdit3.Lines.add('func_leave_main:');
+
      synEdit3.Lines.add('mov eax, 1');
      synEdit3.Lines.add('mov ebx, 0');
      synEdit3.Lines.add('int 80h');
+
+     counter := 0;
+
+    while counter < length (textFuncArr) do //Text with functions!
+     begin
+          synEdit3.Lines.add(textFuncArr[counter]);
+          inc (counter);
+     end;
 
      createFunctions();
 
@@ -336,6 +351,10 @@ begin
     if NOT(Zeile.m_command.mainSet) then
        begin
             Form1.setMistake ('Zeile ' + Form1.getLineNumber + ': Es wurde keine Haupt-funktion deklariert!');
+       end;
+    if NOT(Zeile.m_command.gotoDeployed) then
+       begin
+            Form1.setMistake ('Zeile ' + Form1.getLineNumber + ': Der für eine Sprunganweisung verwendete Sprungpunkt wurde nicht definiert!');
        end;
 end;
 
@@ -494,7 +513,11 @@ begin
          end;
        if ((momChar = ' ') and (not(isText))) then//delete the blank space!
        begin
-           delete (m_string, counter, 1);  //deletes the blank position
+           if counter = 0 then
+           begin
+               delete (m_string, counter + 1, 1);  //deletes the blank position
+           end else
+               delete (m_string, counter, 1);  //deletes the blank position
            dec (counter);                  //because there is a position less in the string now.
            getStringLength();              //regenerates the length of the String;
        end;
@@ -538,9 +561,9 @@ end;
 
 procedure TCommand.compute();
 begin
-    if ((needBegin) and (m_fullLine <> 'begin')) and (NOT(m_fullLine = '')) then
+    if ((needBegin) and (m_fullLine <> 'anfang')) and (NOT(m_fullLine = '')) then
        begin
-          Form1.setMistake ('Zeile' + Form1.getLineNumber() + ': Fehler! "begin" benötigt!');
+          Form1.setMistake ('Zeile' + Form1.getLineNumber() + ': Fehler! "anfang" erwartet!');
        end
     else
       begin
@@ -562,6 +585,10 @@ end;
 
 procedure TCommand.writeOut();
 begin
+    if functionIn = '' then
+       begin
+          Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Der Befehl schreiben darf nur innerhalb einer Funktion aufgerufen werden!');
+       end;
     parseText();
 end;
 
@@ -572,29 +599,29 @@ begin
          inc(m_numberMessages);
          Form1.setAssemblerData('msg' + IntToStr(m_numberMessages) + ': db "' + text + '"'); //Sets the variable wich has to get wrote down
          /////////////////////////////////////////////////////////////////////////
-         Form1.setAssemblerText('mov eax, 4');
-         Form1.setAssemblerText('mov ebx, 1');
-         Form1.setAssemblerText('mov ecx, msg' + IntToStr(m_numberMessages));
-         Form1.setAssemblerText('mov edx, ' + IntToStr(length (text)));   //params for sysCall 4
-         Form1.setAssemblerText('int 80h');   //pokes the system
+         Form1.setAssemblerTextFun('mov eax, 4');
+         Form1.setAssemblerTextFun('mov ebx, 1');
+         Form1.setAssemblerTextFun('mov ecx, msg' + IntToStr(m_numberMessages));
+         Form1.setAssemblerTextFun('mov edx, ' + IntToStr(length (text)));   //params for sysCall 4
+         Form1.setAssemblerTextFun('int 80h');   //pokes the system
      end else //for variables, or different control-chars
            begin
                 if lowerCase(text) = 'nzeile' then
                 begin
-                  Form1.setAssemblerText('mov eax, 4');
-                  Form1.setAssemblerText('mov ebx, 1');
-                  Form1.setAssemblerText('mov ecx, cmp_BLANK');
-                  Form1.setAssemblerText('mov edx, 1');   //params for sysCall 4
-                  Form1.setAssemblerText('int 80h');   //pokes the system
+                  Form1.setAssemblerTextFun('mov eax, 4');
+                  Form1.setAssemblerTextFun('mov ebx, 1');
+                  Form1.setAssemblerTextFun('mov ecx, cmp_BLANK');
+                  Form1.setAssemblerTextFun('mov edx, 1');   //params for sysCall 4
+                  Form1.setAssemblerTextFun('int 80h');   //pokes the system
                 end else
                     begin
                          if varDoesExist (text) then //checks if the pointed variable really DOES exist.
                             begin
-                               Form1.setAssemblerText ('mov eax, 4');  //assembly-stuff.
-                               Form1.setAssemblerText ('mov ebx, 1');
-                               Form1.setAssemblerText ('mov ecx, ' + text);
-                               Form1.setAssemblerText ('mov edx, 255');
-                               Form1.setAssemblerText ('int 80h');
+                               Form1.setAssemblerTextFun ('mov eax, 4');  //assembly-stuff.
+                               Form1.setAssemblerTextFun ('mov ebx, 1');
+                               Form1.setAssemblerTextFun ('mov ecx, ' + text);
+                               Form1.setAssemblerTextFun ('mov edx, 255');
+                               Form1.setAssemblerTextFun ('int 80h');
                             end else
                                 begin
                                     Form1.setMistake ('Zeile ' + Form1.getLineNumber + ': Die von dir genannte Variable "' + text + '" existiert nicht');
@@ -607,8 +634,11 @@ procedure TCommand.reset();
 begin
     m_numberMessages := 0;
     protoAllow       := true;
+    functionIn       := '';
+    mainSet          := false;
     setLength (varTable, 0);  //empties the array without destructing it!
     setLength (prototypes, 0);//same
+    setLength (gotoArray, 0);
 end;
 
 procedure TCommand.parseText();     //In der Dritten Version... hoffen wir, dass ich das nich nochmal schreiben muss.
@@ -716,6 +746,10 @@ procedure TCommand.parseVar();    //neuevariable (name= wert) //automatische  ty
 var name: string = '';
 var val : string = '';
 begin
+     if functionIn <> '' then
+        begin
+           Form1.setMistake('Zeile ' + Form1.getLineNumber() + ': Variablen dürfen nur auserhalb einer Funktion deklariert werden!');
+        end;
      name := copy (m_args, pos ('(', m_args) + 1, pos ('=', m_args) - 2);
      if varDoesExist (name) then
          begin
@@ -842,17 +876,41 @@ end;
 ///////////////////////////////////////////////////////////////////////////////////
 
 procedure TCommand.parseGoto();
-var newArg : string = '';
+var newArg : string  = '';
+var i      : integer = 0;
+var foundLa: boolean = false;
 begin
+    if functionIn = '' then
+       begin
+          Form1.setMistake('Zeile ' + Form1.getLineNumber() + ': Der Befehl gehezu muss in einer Funktion stehen!');
+       end;
     newArg := copy (m_args, pos ('(', m_args) + 1, pos (')', m_args) - 2);
      if m_command = 'punktsetzen' then
         begin
-            if copy (newArg, 0, 3) = 'cmp' then
+            if (copy (newArg, 0, 3) = 'cmp') or (copy (newArg, 0, 5) = 'func_') then
                begin
                   Form1.setMistake ('Zeile ' + Form1.getLineNumber + ': Der Name eines Sprungpunktes darf nicht mit cmp anfangen.');
                end else
                    begin
-                      Form1.setAssemblerText (newArg + ':');
+                      for i := 0 to length (gotoArray) -1 do
+                      begin
+                         if gotoArray[i, 1] = newArg then
+                            begin
+                               foundLa := true;
+                               break;
+                            end;
+                      end;
+                      if (foundLa = true) and (gotoArray[i, 3] = '1') then
+                         begin
+                              Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Dieser Sprungpunkt existiert schon!');
+                         end else
+                             begin
+                                 Form1.setAssemblerTextFun(newArg + ':');
+                                 setLength (gotoArray, length (gotoArray) + 1);
+                                 gotoArray[i, 1] := newArg;
+                                 gotoArray[i, 2] := functionIn;
+                                 gotoArray[i, 3] := '1';
+                             end;
                    end;
         end else if m_command = 'gehezu' then
                               begin
@@ -861,7 +919,31 @@ begin
                                         Form1.setMistake ('Zeile ' + Form1.getLineNumber + ': Der Name eines Sprungpunktes darf nicht mit cmp anfangen.');
                                      end else
                                          begin
-                                            Form1.setAssemblerText ('jmp ' + newArg);
+                                            for i := 0 to length (gotoArray) -1 do
+                                            begin
+                                               if gotoArray[i, 1] = newArg then
+                                                  begin
+                                                     foundLa := true;
+                                                     break;
+                                                  end;
+                                            end;
+                                                if foundLa = true then
+                                                   begin
+                                                      if gotoArray[i, 2] = functionIn then
+                                                         begin
+                                                           Form1.setAssemblerTextFun('jmp ' + newArg);
+                                                         end else
+                                                             begin
+                                                                Form1.setMistake ('Zeile ' + Form1.getLineNumber + ': Sprungpunkt dürfen nicht Funktionen überspringen!.');
+                                                             end;
+                                                   end else
+                                                       begin
+                                                           setLength (gotoArray, length (gotoArray) + 1);
+                                                           gotoArray[i, 1] := newArg;
+                                                           gotoArray[i, 2] := functionIn;
+                                                           gotoArray[i, 3] := '0';
+                                                           Form1.setAssemblerTextFun('jmp ' + newArg);
+                                                       end;
                                          end;
                               end;
 end;
@@ -927,11 +1009,18 @@ begin
                 inc (counter);
            end;
 end;
+////////////////////////77777777777777777////////////////////////////////////////////////////////////////77
+////////////////////////////////////INPUT//////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 procedure TCommand.handleInputAsm ();
 var varName : string;
 var counter : integer = 0;
 begin
+     if functionIn = '' then
+        begin
+           Form1.setMistake('Zeile ' + Form1.getLineNumber() + ': Der Befehl eingeben muss in einer Funktion stehen!');
+        end;
      varName := getTextWOBrackets (m_args);
     if varDoesExist(varName) then
         begin
@@ -985,9 +1074,11 @@ begin
     if m_fullline = 'anfang' then //begin .. end section
         begin
           validKeyWord := true;
+          handleBegin ();
         end;
     if m_fullLine = 'ende' then //begin...end section (end)
         begin
+          handleEnd();
           validKeyWord := true;
         end;
     if varDoesExist (copy (m_fullLine, 0, pos ('=', m_fullline) + 1)) then  //for operations on variables
@@ -1004,13 +1095,17 @@ end;
 procedure TCommand.handleBegin ();
 var lengthOfStack : integer = 0;
 begin
-      lengthOfStack := length (indentStack);
+    if NOT(needBegin = true) then
+      begin
+        Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Unerwartet: Befehl erwartet aber anfang gefunden');
+      end;
+      lengthOfStack := length (indentStack) + 1;
       needBegin     := false;
       setLength (indentStack, lengthOfStack);
       if functionIn = 'haupt' then
           begin
-              indentStack[lengthOfStack, 1] := 'haupt';
-              indentStack[lengthOfStack, 2] := Form1.getLineNumber(); //As the array is a String...
+              indentStack[lengthOfStack -1, 1] := 'haupt';
+              indentStack[lengthOfStack -1, 2] := Form1.getLineNumber(); //As the array is a String...
           end;
 end;
 
@@ -1113,8 +1208,48 @@ end;
 procedure TCommand.handleMainFunc (); //for the Main-function...
 begin
   protoAllow:= false; //no prototypes allowed anymore
+  if mainSet = true then
+      begin
+         Form1.setMistake ('Zeile ' + Form1.getLineNumber () + ': Die function haupt darf nur einmal im Programm vorkommen!');
+      end;
   mainSet   := true;
   needBegin := true;
+  functionIn:= 'haupt';
+  Form1.setAssemblerTextFun('func_main:');
+end;
+
+procedure TCommand.handleEnd ();
+begin
+  if length (indentStack) = 0 then
+      begin
+           Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Funktionsdeklaration erwartet aber ende gefunden!');
+      end;
+  if indentStack[length (indentStack) - 1, 1] = 'haupt' then
+      begin
+         Form1.setAssemblerTextFun('jmp func_leave_main');
+         FunctionIn := '';
+      end;
+end;
+
+function TCommand.gotoDeployed : boolean; //iterates throug the label-array, and checks, if every goto was really implemented.
+var counter : integer = 0;
+begin
+  if gotoArray = nil then
+    begin
+       gotoDeployed := true; //if the array is empty, throw an error-code!
+    end else
+        begin
+           gotoDeployed := true;
+            while counter <= length (gotoArray)-1 do
+                  begin
+                       if gotoArray [counter, 3] = '0' then
+                           begin
+                                gotoDeployed := false;
+                                break;
+                           end;
+                       inc (counter);
+                  end;
+        end;
 end;
 
 {$R *.lfm}
