@@ -74,10 +74,11 @@ type
                    var lastFNIn   : string; //for the type of function.
                    var functionIn : string; //the Function were momentary in.
                    var needBegin  : boolean; //If a begin sequence is required on the next Line.
-                   var indentStack: array of array [1 .. 2] of string; //type|lineNumber of start//Used for begin-end; sequences.
-                   var prototypes : array of array [1 .. 2] of string; //name|solved//If solved isnt, error
+                   var indentStack: array of array [1 .. 3] of string; //name|type|lineNumber of start//Used for begin-end; sequences.
+                   var prototypes : array of array [1 .. 2] of string; //name|solved//If not solved, error
                    var protoAllow : boolean; //If protoypes aren't allowed (after the first function)
                    var gotoArray  : array of array [1 .. 3] of string;  //name|scope|deployed
+                   var wasInFunc  : boolean; //if there was ever a function declared (for variables and prototypes)
              private //private methods
                    procedure compute   ();
                    function  getTextInString   (i: string) : string;
@@ -103,7 +104,7 @@ type
              ///////////////////GOTO//////////////////////////////////////
              private //functions
                      procedure parseGoto     ();
-                     function gotoDeployed  () : boolean;
+                     function  gotoDeployed  () : boolean;
              private //variables
              ///////////////////INPUT/////////////////////////////////////
              private //functions
@@ -121,6 +122,7 @@ type
              //Functions
              private
                  procedure handleMainFunc  ();
+                 procedure handleVoidFunc  ();
              private
              //function prototypes
              private
@@ -128,6 +130,9 @@ type
                  function  protoExists     (i: string) : boolean; //if theres already a prototype called like this... SHIT MAN
                  function  getProtoIndex   (i: string) : integer;
              private
+             //call function
+             private
+                 procedure callFunc ();
     end;
 
         TLine = class
@@ -307,8 +312,7 @@ begin
      end;
 
      //terminate run of the program without "segfaulting"! (System call sys_close)
-     synEdit3.Lines.add('jmp func_main');
-     synEdit3.Lines.add('func_leave_main:');
+     synEdit3.Lines.add('call func_main');
 
      synEdit3.Lines.add('mov eax, 1');
      synEdit3.Lines.add('mov ebx, 0');
@@ -574,6 +578,7 @@ begin
               'gehezu'      : parseGoto();
               'eingeben'    : handleInputAsm();
               'prototyp'    : handlePrototype();
+              'aufrufen'    : callFunc();
               else            proceedKeyW();
           end;
       end;
@@ -639,6 +644,11 @@ begin
     setLength (varTable, 0);  //empties the array without destructing it!
     setLength (prototypes, 0);//same
     setLength (gotoArray, 0);
+    setLength (indentStack, 0);
+    lastFNIn         := '';
+    protoAllow       := true;
+    wasInFunc        := false;
+    needBegin        := false;
 end;
 
 procedure TCommand.parseText();     //In der Dritten Version... hoffen wir, dass ich das nich nochmal schreiben muss.
@@ -851,8 +861,16 @@ begin
           Form1.setAssemblerBss (name + ': resb 9');
           while counter < total do
                 begin
-                   Form1.setAssemblerText ('mov BYTE[' + name + ' + ' + intToStr (counter-1) + '], "' + copy (i, counter, 1) + '"'); //inputs the single Char
-                   inc(counter); //increments counter
+                    showmessage (i);
+                   if i = '"' then
+                      begin
+                         Form1.setAssemblerText ('mov BYTE[' + name + ' + ' + intToStr (counter-1) + '], "' + ' ' + '"'); //inputs the single Char
+                         break;
+                      end else
+                             begin
+                                  Form1.setAssemblerText ('mov BYTE[' + name + ' + ' + intToStr (counter-1) + '], "' + copy (i, counter, 1) + '"'); //inputs the single Char
+                                  inc(counter); //increments counter
+                             end;
                 end;
        end else
        begin
@@ -864,8 +882,15 @@ begin
             Form1.setAssemblerBss (name + ': resb 255');
             while counter <= total do
                   begin
-                     Form1.setAssemblerText ('mov BYTE[' + name + ' + ' + intToStr (counter-1) + '], "' + copy (i, counter, 1) + '"'); //inputs the single Char
-                     inc(counter); //increments counter
+                       if i = '"' then
+                          begin
+                             Form1.setAssemblerText ('mov BYTE[' + name + ' + ' + intToStr (counter-1) + '], "' + ' ' + '"'); //inputs the single Char
+                             break;
+                          end else
+                                 begin
+                                      Form1.setAssemblerText ('mov BYTE[' + name + ' + ' + intToStr (counter-1) + '], "' + copy (i, counter, 1) + '"'); //inputs the single Char
+                                      inc(counter); //increments counter
+                                 end;
                   end;
        end;
 end;
@@ -1016,6 +1041,7 @@ end;
 procedure TCommand.handleInputAsm ();
 var varName : string;
 var counter : integer = 0;
+var total   : integer = 0;
 begin
      if functionIn = '' then
         begin
@@ -1024,23 +1050,48 @@ begin
      varName := getTextWOBrackets (m_args);
     if varDoesExist(varName) then
         begin
+           counter := 0;
            if varTable [getVarIndex (varName), 2] = 'zahl' then //Integer-types
                begin
-                  Form1.setAssemblerText('mov eax, 3');
-                  Form1.setAssemblerText('mov ebx, 1');
-                  Form1.setAssemblerText('mov ecx, ' + varName);
-                  Form1.setAssemblerText('mov edx, 9');
-                  Form1.setAssemblerText('int 80h'); //calls the Kernel
-                  Form1.setAssemblerText('mov eax, ' + varName); //moves the Pointer of varname into eax, which serves to pass an arguement
-                  Form1.setAssemblerText('call cmp_sorting');
-                  Form1.setAssemblerText('mov [' + varName + '], eax');
+                  total := 9;
+                 while counter < total do
+                  begin
+                          Form1.setAssemblerTextFun ('mov BYTE[' + varName + ' + ' + intToStr(counter) + '], "' + '' + '"'); //inputs the single Char
+                          inc (counter);
+                  end;
+                  Form1.setAssemblerTextFun('mov eax, 3');
+                  Form1.setAssemblerTextFun('mov ebx, 1');
+                  Form1.setAssemblerTextFun('mov ecx, ' + varName);
+                  Form1.setAssemblerTextFun('mov edx, 9');
+                  Form1.setAssemblerTextFun('int 80h'); //calls the Kernel
+                  Form1.setAssemblerTextFun('mov eax, ' + varName); //moves the Pointer of varname into eax, which serves to pass an arguement
+                  Form1.setAssemblerTextFun('call cmp_sorting');
+                  Form1.setAssemblerTextFun('mov [' + varName + '], eax');
+                  //this flushes the new line Character
+                  Form1.setAssemblerTextFun('mov eax,54');
+                  Form1.setAssemblerTextFun('mov ebx,0');
+                  Form1.setAssemblerTextFun('mov ecx,0x540B');
+                  Form1.setAssemblerTextFun('xor edx, edx');
+                  Form1.setAssemblerTextFun('int 0x80');
                end else
                    begin
-                        Form1.setAssemblerText('mov eax, 3');
-                        Form1.setAssemblerText('mov ebx, 1');
-                        Form1.setAssemblerText('mov ecx, ' + varName);
-                        Form1.setAssemblerText('mov edx, 255');
-                        Form1.setAssemblerText('int 80h'); //calls the Kernel
+                      total := 255;
+                      while counter < total do
+                       begin
+                               Form1.setAssemblerTextFun ('mov BYTE[' + varName + ' + ' + intToStr(counter) + '], "' + '' + '"'); //inputs the single Char
+                               inc (counter);
+                       end;
+                        Form1.setAssemblerTextFun('mov eax, 3');
+                        Form1.setAssemblerTextFun('mov ebx, 1');
+                        Form1.setAssemblerTextFun('mov ecx, ' + varName);
+                        Form1.setAssemblerTextFun('mov edx, 255');
+                        Form1.setAssemblerTextFun('int 80h'); //calls the Kernel
+                        //flushes the newLine character
+                        Form1.setAssemblerTextFun('mov eax,54');
+                        Form1.setAssemblerTextFun('mov ebx,0');
+                        Form1.setAssemblerTextFun('mov ecx,0x540B');
+                        Form1.setAssemblerTextFun('xor edx, edx');
+                        Form1.setAssemblerTextFun('int 0x80');
                    end;
         end;
 end;
@@ -1057,6 +1108,7 @@ begin
     if copy (m_fullLine, 0, 4) = 'leer' then //void functions
         begin
           validKeyWord := true;
+          handleVoidFunc();
         end;
     if copy (m_fullLine, 0, 5) = 'haupt' then //function main ()
         begin
@@ -1107,6 +1159,15 @@ begin
               indentStack[lengthOfStack -1, 1] := 'haupt';
               indentStack[lengthOfStack -1, 2] := Form1.getLineNumber(); //As the array is a String...
           end;
+      if lastFNIn = 'leer' then //for void functions
+          begin
+             indentStack[lengthOfStack -1, 1] := functionIn; //name
+             indentStack[lengthOfStack -1, 2] := 'leer';     //type
+             indentStack[lengthOfStack -1, 3] := Form1.getLineNumber(); //line_number
+             Form1.setAssemblerTextFun(functionIn + ':');
+             prototypes[getProtoIndex(functionIn), 2] := '1'; //sets the prototype to true
+          end;
+
 end;
 
 procedure TCommand.handlePrototype ();
@@ -1114,7 +1175,9 @@ var proto: string;
 begin
      if protoAllow then
          begin
+            proto := m_args;      //copies the inside of the brackets into proto
             proto := getTextWOBrackets(proto);  //gets the prototype without the surrounding brackets
+            proto := lowerCase (proto);
             if NOT(protoExists (proto)) then //checks, if there is already a protoype called like this.
                 begin
                    setlength (prototypes, length (prototypes) +1);
@@ -1171,6 +1234,7 @@ begin
           noProtoUnsolved := true; //if the array is empty, there obviously can't be a protoype already called like this
        end else
            begin
+              noProtoUnsolved := true;
                while counter <= lengthOf do
                      begin
                           if prototypes [counter, 2] = '0' then
@@ -1210,7 +1274,7 @@ begin
   protoAllow:= false; //no prototypes allowed anymore
   if mainSet = true then
       begin
-         Form1.setMistake ('Zeile ' + Form1.getLineNumber () + ': Die function haupt darf nur einmal im Programm vorkommen!');
+         Form1.setMistake ('Zeile ' + Form1.getLineNumber () + ': Die funktion haupt darf nur einmal im Programm vorkommen!');
       end;
   mainSet   := true;
   needBegin := true;
@@ -1226,8 +1290,13 @@ begin
       end;
   if indentStack[length (indentStack) - 1, 1] = 'haupt' then
       begin
-         Form1.setAssemblerTextFun('jmp func_leave_main');
+         Form1.setAssemblerTextFun('ret');
          FunctionIn := '';
+      end;
+  if indentStack[length (indentStack) - 1, 2] = 'leer' then
+      begin
+         functionIn := '';
+         Form1.setAssemblerTextFun('ret');
       end;
 end;
 
@@ -1250,6 +1319,39 @@ begin
                        inc (counter);
                   end;
         end;
+end;
+
+procedure TCommand.handleVoidFunc ();
+var func_name: string;
+var parse    : string;
+begin
+   needBegin := true;
+   parse     := copy (m_fullLine, 5, length (m_fullLine) - 4); //removes the prefix for void functions
+   parse     := lowerCase (parse);
+   if NOT(protoExists (parse)) then
+       begin
+            Form1.setMistake ('Zeile ' + Form1.getLineNumber () + ': Die Funktion ' + parse + ' hat keinen Prototypen.');
+       end;
+   if prototypes[getProtoIndex (parse), 2] = '1' then
+       begin
+          Form1.setMistake ('Zeile ' + Form1.getLineNumber () + ': Dieser Prototyp wurde schon einmal beschrieben.');
+       end;
+   func_name := parse;
+   functionIn:= func_name;
+   lastFNIn  := 'leer';
+end;
+
+procedure TCommand.callFunc ();
+var parse : string = ''; //just the momStrng without brackets ()
+begin
+    parse := getTextWOBrackets(m_args); //removes the brackets
+    if NOT(protoExists(parse)) then //if the prototype doesn't exist, throw an error!
+        begin
+            Form1.setMistake ('Zeile ' + Form1.getLineNumber () + ': Die aufgerufene Funktion ' + parse + ' gibt es garnicht');
+        end else
+            begin
+                Form1.setAssemblerTextFun('call ' + parse); //sets the assembler
+            end;
 end;
 
 {$R *.lfm}
