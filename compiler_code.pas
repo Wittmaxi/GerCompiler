@@ -6,7 +6,8 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, SynEdit, SynHighlighterAny, SynCompletion, Forms,
-  Controls, Graphics, Dialogs, StdCtrls, ExtCtrls, IniFiles, LCLType;
+  Controls, Graphics, Dialogs, StdCtrls, ExtCtrls, IniFiles, LCLType, testdecorator,
+  fpcunit;
 
 type
 
@@ -156,6 +157,7 @@ type
                procedure getArgInLine    ();       //gets the arguement inside an line.
                procedure passComm        ();
     end;
+
 
 var Form1 : TForm1;
 var Zeile : TLine;
@@ -339,8 +341,9 @@ end;
 procedure TForm1.feedLines (); ///////////////////////////////THE LOOP WHICH FEEDS THE LINES INTO FUNCTIONS:
 var textLength: integer;
 begin
-    m_momLine   := 0;
-    textLength:= synEdit1.Lines.Count;
+    m_momLine       := 0;
+    textLength      := synEdit1.Lines.Count;
+    synEdit1.enabled:= false;
     //loops throug the Text and feeds the momentary line into the Functions.
     while (m_momLine <= textLength -1) and (mistake = false) do
     begin
@@ -348,6 +351,7 @@ begin
        Zeile.compileLine();
        inc              (m_momLine);
     end;
+    synEdit1.enabled:= true;
     if NOT(Zeile.m_command.noProtoUnsolved()) then
        begin
             Form1.setMistake ('Zeile ' + Form1.getLineNumber + ': Eine Funktion wurde deklariert aber nicht beschrieben!');
@@ -756,6 +760,10 @@ procedure TCommand.parseVar();    //neuevariable (name= wert) //automatische  ty
 var name: string = '';
 var val : string = '';
 begin
+     if wasInFunc = true then
+        begin
+           Form1.setMistake('Zeile ' + Form1.getLineNumber() + ': Variablen dürfen nur am Anfang des Programmes deklariert werden!');
+        end;
      if functionIn <> '' then
         begin
            Form1.setMistake('Zeile ' + Form1.getLineNumber() + ': Variablen dürfen nur auserhalb einer Funktion deklariert werden!');
@@ -1151,6 +1159,7 @@ begin
       begin
         Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Unerwartet: Befehl erwartet aber anfang gefunden');
       end;
+      wasInFunc:= true;
       lengthOfStack := length (indentStack) + 1;
       needBegin     := false;
       setLength (indentStack, lengthOfStack);
@@ -1173,6 +1182,10 @@ end;
 procedure TCommand.handlePrototype ();
 var proto: string;
 begin
+   if wasInFunc = true then
+        begin
+           Form1.setMistake('Zeile ' + Form1.getLineNumber() + ': Variablen dürfen nur am Anfang des Programmes deklariert werden!');
+        end;
      if protoAllow then
          begin
             proto := m_args;      //copies the inside of the brackets into proto
@@ -1224,7 +1237,7 @@ begin
              end;
 end;
 
-function TCommand.noProtoUnsolved () : boolean;
+function TCommand.noProtoUnsolved () : boolean; //if every prototype got its function assigned
 var counter  : integer = 0;
 var lengthOf : integer = 0;
 begin
@@ -1247,7 +1260,7 @@ begin
            end;
 end;
 
-function TCommand.getProtoIndex (i: string) : integer;
+function TCommand.getProtoIndex (i: string) : integer;    //get the index of the name of the prototype inside the array.
 var counter  : integer = 0;
 var lengthOf : integer = 0;
 begin
