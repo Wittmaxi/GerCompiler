@@ -118,7 +118,7 @@ type
              private
              //////////////////IF-STATEMENTS//////////////////////////////
              private
-
+                 procedure handleIf ();
              private
              //Functions
              private
@@ -1152,6 +1152,11 @@ begin
           handleEnd();
           validKeyWord := true;
         end;
+    if copy (m_fullLine, 0, 4) = 'wenn' then //If-Statements.
+        begin
+          handleIF();
+          validKeyWord := true;
+        end;
     if varDoesExist (copy (m_fullLine, 0, pos ('=', m_fullline) + 1)) then  //for operations on variables
         begin
           validKeyWord := true;
@@ -1378,6 +1383,15 @@ begin
             end;
 end;
 
+
+procedure TCommand.handleIf();
+begin
+    //First check, what type of vars get checked to each others.
+    if pos ('==', 'spacer' + m_fullLine) then //on equal
+        begin
+
+        end;
+end;
 
 {$R *.lfm}
 
