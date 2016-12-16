@@ -101,7 +101,7 @@ type
                    procedure handleVarAsm(i: string; name: string; itype: string);
                    //procedure checkvarComm(com: string);
              private //variables
-                     var varTable : array of array [1..2] of string; //vartable Column 1 = name, Column 2 = value
+                     var varTable : array of array [1..2] of string; //vartable Column 1 = name, Column 2 = type
              ///////////////////GOTO//////////////////////////////////////
              private //functions
                      procedure parseGoto     ();
@@ -244,6 +244,7 @@ begin
     setAssemblerData('cmp_interr: db "error, You have typed in a non-Integer Character!", 0x0a');
     setAssemblerData('cmp_interrlen: equ $-cmp_interr');
     setAssemblerData('cmp_buffer: times 9 db 0x00');
+    setAssemblerData('cmp_beep: db 0x07');//for the beeping sound, which is in the ASCII code for wathever reason
     setAssemblerText('section .text');
     setAssemblerText('global _start');
     setAssemblerText('_start:');
@@ -626,11 +627,21 @@ begin
                     begin
                          if varDoesExist (text) then //checks if the pointed variable really DOES exist.
                             begin
-                               Form1.setAssemblerTextFun ('mov eax, 4');  //assembly-stuff.
-                               Form1.setAssemblerTextFun ('mov ebx, 1');
-                               Form1.setAssemblerTextFun ('mov ecx, ' + text);
-                               Form1.setAssemblerTextFun ('mov edx, 255');
-                               Form1.setAssemblerTextFun ('int 80h');
+                              if varTable[getVarIndex(text), 2] = 'text' then
+                                 begin
+                                      Form1.setAssemblerTextFun ('mov eax, 4');  //assembly-stuff.
+                                      Form1.setAssemblerTextFun ('mov ebx, 1');
+                                      Form1.setAssemblerTextFun ('mov ecx, ' + text);
+                                      Form1.setAssemblerTextFun ('mov edx, 255');
+                                      Form1.setAssemblerTextFun ('int 80h');
+                                 end else
+                                     begin
+                                          Form1.setAssemblerTextFun ('mov eax, 4');  //assembly-stuff.
+                                          Form1.setAssemblerTextFun ('mov ebx, 1');
+                                          Form1.setAssemblerTextFun ('mov ecx, ' + text);
+                                          Form1.setAssemblerTextFun ('mov edx, 9'); //because it writes an integer
+                                          Form1.setAssemblerTextFun ('int 80h');
+                                     end;
                             end else
                                 begin
                                     Form1.setMistake ('Zeile ' + Form1.getLineNumber + ': Die von dir genannte Variable "' + text + '" existiert nicht');
@@ -1366,6 +1377,7 @@ begin
                 Form1.setAssemblerTextFun('call ' + parse); //sets the assembler
             end;
 end;
+
 
 {$R *.lfm}
 
