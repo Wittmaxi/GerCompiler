@@ -67,6 +67,7 @@ type
                    procedure reset      ();
                    procedure proceedKeyW();
                    function  noProtoUnsolved () : boolean;
+                   function  getStacklenght () : integer;
              private    //private members
                    var m_command  : string;
                    var m_args     : string;
@@ -119,7 +120,9 @@ type
              //////////////////IF-STATEMENTS//////////////////////////////
              private
                  procedure handleIf ();
+                 procedure handleEqu();
              private
+                 var numberIf: integer;
              //Functions
              private
                  procedure handleMainFunc  ();
@@ -364,6 +367,10 @@ begin
     if NOT(Zeile.m_command.gotoDeployed) then
        begin
             Form1.setMistake ('Zeile ' + Form1.getLineNumber + ': Der für eine Sprunganweisung verwendete Sprungpunkt wurde nicht definiert!');
+       end;
+    if Zeile.m_command.getStacklenght() <> 0 then
+       begin
+          Form1.setMistake ('Zeile ' + Form1.getLineNumber + ': Fehler: ende erwartet, aber Dateiende gefunden!');
        end;
 end;
 
@@ -1192,6 +1199,12 @@ begin
              Form1.setAssemblerTextFun(functionIn + ':');
              prototypes[getProtoIndex(functionIn), 2] := '1'; //sets the prototype to true
           end;
+      if lastFNIn = 'wenn' then //if
+          begin
+             indentStack[lengthOfStack -1, 1] := intToStr(numberIf); //name (N-th if-Statement)
+             indentStack[lengthOfStack -1, 2] := 'wenn';     //type
+             indentStack[lengthOfStack -1, 3] := Form1.getLineNumber(); //line_number
+          end;
 
 end;
 
@@ -1327,6 +1340,11 @@ begin
          functionIn := '';
          Form1.setAssemblerTextFun('ret');
       end;
+  if indentStack [length (indentStack) - 1, 2] = 'wenn' then
+      begin
+        Form1.setAssemblerTextFun('cmp_after_if' + indentStack[length (indentStack) - 1, 1]  + ':');
+      end;
+  setLength (indentStack, length (indentStack) - 1);
 end;
 
 function TCommand.gotoDeployed : boolean; //iterates throug the label-array, and checks, if every goto was really implemented.
@@ -1387,10 +1405,71 @@ end;
 procedure TCommand.handleIf();
 begin
     //First check, what type of vars get checked to each others.
-    if pos ('==', 'spacer' + m_fullLine) then //on equal
+    needBegin := true;
+    lastFNIn  := 'wenn';
+    if pos ('==', 'spacer' + m_fullLine) <> 0 then //on equal
         begin
-
+           handleEqu();
         end;
+end;
+
+procedure TCommand.handleEqu ();
+var firstOp : string;
+var secondOP: string;
+var opPos   : integer;
+var asmText : string;
+begin
+     opPos   := pos ('==', m_fullLine);
+     firstOp := copy (m_fullLine, 5, opPos-5);  //the operand before the ==
+     secondOP:= copy (m_fullLine, opPos + 2, length (m_fullLine));     //after ==
+     if varDoesExist(firstOP) then      //Does the variable of first op exist?
+         begin
+           Form1.setAssemblerTextFun ('mov eax, ' + firstOp);
+         end else
+             begin
+                if ord (firstOp[1]) = 34 then
+                    begin
+                       firstOp:= getTextInString(firstOp); //removes the "inside of the String"
+                       Form1.setAssemblerTextFun ('mov eax, ' + firstOp);
+                    end else
+                        begin
+                           if typeCheck(firstOp) = 'zahl' then
+                               begin
+                                 Form1.setAssemblerTextFun ('mov eax, ' + firstOp);
+                               end else
+                                   begin
+                                      Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Zahlen dürfen keinen Text enthalten!');
+                                   end;
+                        end;
+             end;
+             asmText := 'cmp eax, ';
+         if varDoesExist(secondOP) then      //Does the variable of first op exist?
+         begin
+           asmText += secondOp;
+         end else
+             begin
+                if ord (secondOp[1]) = 34 then
+                    begin
+                       asmText += secondOp;
+                    end else
+                        begin
+                           if typeCheck(secondOp) = 'zahl' then
+                               begin
+                                 asmText += secondOp;
+                               end else
+                                   begin
+                                      Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Zahlen dürfen keinen Text enthalten!');
+                                   end;
+                        end;
+             end;
+         inc (numberIf);
+         Form1.setAssemblerTextFun(asmText);
+         Form1.setAssemblerTextFun('jne cmp_after_if' + intToStr(numberIf));
+end;
+
+function TCommand.getStacklenght () : integer;
+begin
+     getStackLenght := length (indentStack);
 end;
 
 {$R *.lfm}
