@@ -6,8 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, SynEdit, SynHighlighterAny, SynCompletion, Forms,
-  Controls, Graphics, Dialogs, StdCtrls, ExtCtrls, IniFiles, LCLType, testdecorator,
-  fpcunit;
+  Controls, Graphics, Dialogs, StdCtrls, ExtCtrls, LCLType;
 
 type
 
@@ -121,6 +120,7 @@ type
              private
                  procedure handleIf ();
                  procedure handleEqu();
+                 procedure handleEquVarAndText (firstOp: string; secondOp: string);
              private
                  var numberIf: integer;
              //Functions
@@ -246,7 +246,7 @@ begin
     setAssemblerData('cmp_BLANK: db 0x0a');
     setAssemblerData('cmp_interr: db "error, You have typed in a non-Integer Character!", 0x0a');
     setAssemblerData('cmp_interrlen: equ $-cmp_interr');
-    setAssemblerData('cmp_buffer: times 9 db 0x00');
+    setAssemblerBss ('cmp_buffer: resb 255');
     setAssemblerData('cmp_beep: db 0x07');//for the beeping sound, which is in the ASCII code for wathever reason
     setAssemblerText('section .text');
     setAssemblerText('global _start');
@@ -797,7 +797,7 @@ begin
          end else
          begin
                //starts off by savingthe variable-name into the Array.
-               setlength (varTable, length (vartable[1]));
+               setlength (varTable, length (vartable) + 1);
                varTable [length (vartable)-1, 1]:= name;
                //gets the Value, to which the Variable is assigned.
                val:= copy (m_args, pos ('=', m_args) + 1, pos (')', m_args) - pos ('=', m_args)-1);
@@ -837,7 +837,7 @@ begin
                varDoesExist := false;
            end else
                begin //searches the variable-name in the Array. ##nice
-                   arrayLength := length (varTable[1]) -1;  //-1 because of the offset.
+                   arrayLength := length (varTable) -1;  //-1 because of the offset.
                    varDoesExist:= false; //sets false by default, which gets changed in the while-loop
                    while counter <= arrayLength do
                          begin
@@ -861,7 +861,7 @@ begin
            showmessage ('Unit-test Fail #1');
        end else
            begin
-               arrayLength := length (vartable[1]) - 1; //gets the length of the array
+               arrayLength := length (vartable) - 1; //gets the length of the array
                while counter <= arrayLength do
                      begin
                          if varTable [counter, 1] = i then   //looks up, if the mom index corresponds to the seeked String.
@@ -891,7 +891,7 @@ begin
                     showmessage (i);
                    if i = '"' then
                       begin
-                         Form1.setAssemblerText ('mov BYTE[' + name + ' + ' + intToStr (counter-1) + '], "' + ' ' + '"'); //inputs the single Char
+                         Form1.setAssemblerText ('mov BYTE[' + name + ' + ' + intToStr (counter-1) + '], 0'); //inputs the single Char
                          break;
                       end else
                              begin
@@ -1414,32 +1414,31 @@ begin
         end;
 end;
 
-procedure TCommand.handleEqu ();
+procedure TCommand.handleEqu ();       //SORRY for this crappy function! I'm too lazy to remake this. ya know?
 var firstOp  : string;
 var secondOP : string;
 var opPos    : integer;
 var asmText  : string;
-var op1IsVar : boolean; //if the first operator is a variabe
-var op2IsVar : boolean; //if the second operator is a variable
+var op1Type  : string = '';
+var op2Type  : string = '';
+var switchCon: string;
 begin
      opPos   := pos ('==', m_fullLine);
      firstOp := copy (m_fullLine, 5, opPos-5);  //the operand before the ==
      secondOP:= copy (m_fullLine, opPos + 2, length (m_fullLine));     //after ==
      if varDoesExist(firstOP) then      //Does the variable of first op exist?
          begin
-           Form1.setAssemblerTextFun ('mov eax, byte[' + firstOp + ']');
-           op1IsVar := true;
+           op1Type := 'var';
          end else
              begin
                 if ord (firstOp[1]) = 34 then
                     begin
-                       firstOp:= getTextInString(firstOp); //removes the "inside of the String"
-                       Form1.setAssemblerTextFun ('mov eax, ' + firstOp);
+                      op1Type := 'text';
                     end else
                         begin
                            if typeCheck(firstOp) = 'zahl' then
                                begin
-                                 Form1.setAssemblerTextFun ('mov eax, ' + firstOp);
+                                 op1Type := 'zahl';
                                end else
                                    begin
                                       Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Zahlen dürfen keinen Text enthalten!');
@@ -1449,18 +1448,17 @@ begin
              asmText := 'cmp eax, ';
          if varDoesExist(secondOP) then      //Does the variable of first op exist?
          begin
-           Form1.setAssemblerTextFun ('mov ebx, byte[' + secondOP + ']');
-           op2IsVar := true;
+              op2Type:= 'var';
          end else
              begin
-                if ord (secondOp[1]) = 34 then
+                if ord (secondOp[1]) = 34 then       //strings can't be compared to ints. ya know
                     begin
-                       asmText += secondOp;
+                         op2Type:= 'text';
                     end else
                         begin
                            if typeCheck(secondOp) = 'zahl' then
                                begin
-                                 asmText += secondOp;
+                                   op2Type:= 'zahl';
                                end else
                                    begin
                                       Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Zahlen dürfen keinen Text enthalten!');
@@ -1468,36 +1466,26 @@ begin
                         end;
              end;
          inc (numberIf);
-         if ((op1IsVar) or (op2IsVar)) then
+         if ((op1Type = 'text') and (op2Type = 'var')) or ((op1Type = 'var') and (op2Type = 'text')) then   //if the compared types are strings and variables
              begin
-               Form1.setAssemblerTextFun ('xor edx, edx'); //empties edx
-               Form1.setAssemblerTextFun ('cmp_if_loop' + intToStr (numberIf));
-               if op1IsVar then
-                   begin
-                     asmText:= 'cmp eax, ';
-                   end else
-                       begin
-                            asmText:= 'cmp ' + firstOp + ', ';
-                       end;
-               if op2IsVar then
-                   begin
-                     asmText+= 'ebx';  //simply appends the correct evaluation.
-                   end else
-                       begin
-                          asmText+= secondOp;
-                       end;
-                Form1.setAssemblerTextFun (asmText);
-                Form1.setAssemblerTextFun ('jne cmp_after_if' + intToStr (numberIf));
-                Form1.setAssemblerTextFun ('inc eax');
-                Form1.setAssemblerTextFun ('inc ebx');
-                Form1.setAssemblerTextFun ('inc edx');
-                Form1.setAssemblerTextFun ('cmp edx, 255');
-                Form1.setAssemblerTextFun ('jne cmp_if_loop' + intToStr (numberIf));
-             end else
-                 begin
-                    Form1.setAssemblerTextFun(asmText);
-                    Form1.setAssemblerTextFun('jne cmp_after_if' + intToStr(numberIf));
-                 end;
+                  if op1Type = 'var' then //checks if the variables are really string-typed
+                      begin
+                          if vartable[getVarIndex(firstOp), 2] <> 'text' then
+                              begin
+                                     Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Du kannst Texte nicht mit Zahlen vergleichen!');
+                              end;
+                      end else
+                          begin
+                             switchCon:= firstOp;  //swaps them in place, so they can't penguin anymore
+                             firstOp  := secondOp;
+                             secondOp := switchCon;
+                             if vartable[getVarIndex(secondOp), 2] <> 'text' then
+                                 begin
+                                        Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Du kannst Texte nicht mit Zahlen vergleichen!');
+                                 end;
+                          end;
+                   handleEquVarAndText(firstOp, secondOp);
+             end;
 end;
 
 function TCommand.getStacklenght () : integer;
@@ -1505,39 +1493,27 @@ begin
      getStackLenght := length (indentStack);
 end;
 
+procedure TCommand.handleEquVarAndText (firstOp: string; secondOp: string); //first op is supposed to be the Variable, second Op the text.
+var counter : integer = 1;
+var momChar : char;
+begin
+//Straigth forward: I take the variable, split it into little Pieces, and do the same with the string.
+    secondOp:= getTextInString(secondOp);
+    while (counter < 255) do //does as long as the string-limit isn't reached!
+      begin
+         momChar := secondOp[counter];
+         if (length (secondOp) <= counter ) then //if the compared Text is empty, obviously, it doesnt do any good to continue comparing them.
+             begin
+                break;
+             end;
+         Form1.setAssemblerTextFun('mov al, [' + firstOp + ' + ' + intToStr (counter - 1) + ']');
+         Form1.setAssemblerTextFun('cmp al, ' + intToStr(ord (momChar))); //checks, if the ASCII-number of the Checked Text matches the vars text.
+         Form1.setAssemblerTextFun('jne cmp_after_if' + intToStr (numberIf));
+         inc (counter); // -.-
+      end;
+end;
+
 {$R *.lfm}
 
 end.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
