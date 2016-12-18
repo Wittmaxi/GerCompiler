@@ -671,6 +671,7 @@ begin
     protoAllow       := true;
     wasInFunc        := false;
     needBegin        := false;
+    numberIf         := 0;
 end;
 
 procedure TCommand.parseText();     //In der Dritten Version... hoffen wir, dass ich das nich nochmal schreiben muss.
@@ -1414,17 +1415,20 @@ begin
 end;
 
 procedure TCommand.handleEqu ();
-var firstOp : string;
-var secondOP: string;
-var opPos   : integer;
-var asmText : string;
+var firstOp  : string;
+var secondOP : string;
+var opPos    : integer;
+var asmText  : string;
+var op1IsVar : boolean; //if the first operator is a variabe
+var op2IsVar : boolean; //if the second operator is a variable
 begin
      opPos   := pos ('==', m_fullLine);
      firstOp := copy (m_fullLine, 5, opPos-5);  //the operand before the ==
      secondOP:= copy (m_fullLine, opPos + 2, length (m_fullLine));     //after ==
      if varDoesExist(firstOP) then      //Does the variable of first op exist?
          begin
-           Form1.setAssemblerTextFun ('mov eax, ' + firstOp);
+           Form1.setAssemblerTextFun ('mov eax, byte[' + firstOp + ']');
+           op1IsVar := true;
          end else
              begin
                 if ord (firstOp[1]) = 34 then
@@ -1445,7 +1449,8 @@ begin
              asmText := 'cmp eax, ';
          if varDoesExist(secondOP) then      //Does the variable of first op exist?
          begin
-           asmText += secondOp;
+           Form1.setAssemblerTextFun ('mov ebx, byte[' + secondOP + ']');
+           op2IsVar := true;
          end else
              begin
                 if ord (secondOp[1]) = 34 then
@@ -1463,8 +1468,36 @@ begin
                         end;
              end;
          inc (numberIf);
-         Form1.setAssemblerTextFun(asmText);
-         Form1.setAssemblerTextFun('jne cmp_after_if' + intToStr(numberIf));
+         if ((op1IsVar) or (op2IsVar)) then
+             begin
+               Form1.setAssemblerTextFun ('xor edx, edx'); //empties edx
+               Form1.setAssemblerTextFun ('cmp_if_loop' + intToStr (numberIf));
+               if op1IsVar then
+                   begin
+                     asmText:= 'cmp eax, ';
+                   end else
+                       begin
+                            asmText:= 'cmp ' + firstOp + ', ';
+                       end;
+               if op2IsVar then
+                   begin
+                     asmText+= 'ebx';  //simply appends the correct evaluation.
+                   end else
+                       begin
+                          asmText+= secondOp;
+                       end;
+                Form1.setAssemblerTextFun (asmText);
+                Form1.setAssemblerTextFun ('jne cmp_after_if' + intToStr (numberIf));
+                Form1.setAssemblerTextFun ('inc eax');
+                Form1.setAssemblerTextFun ('inc ebx');
+                Form1.setAssemblerTextFun ('inc edx');
+                Form1.setAssemblerTextFun ('cmp edx, 255');
+                Form1.setAssemblerTextFun ('jne cmp_if_loop' + intToStr (numberIf));
+             end else
+                 begin
+                    Form1.setAssemblerTextFun(asmText);
+                    Form1.setAssemblerTextFun('jne cmp_after_if' + intToStr(numberIf));
+                 end;
 end;
 
 function TCommand.getStacklenght () : integer;
@@ -1475,4 +1508,36 @@ end;
 {$R *.lfm}
 
 end.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

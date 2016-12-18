@@ -3,7 +3,7 @@
   <ProjectSession>
     <Version Value="9"/>
     <BuildModes Active="Default"/>
-    <Units Count="4">
+    <Units Count="3">
       <Unit0>
         <Filename Value="Compiler.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -20,151 +20,144 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="1420"/>
-        <CursorPos X="61" Y="1427"/>
+        <TopLine Value="1473"/>
+        <CursorPos X="55" Y="1490"/>
         <UsageCount Value="202"/>
         <Bookmarks Count="1">
-          <Item0 X="39" Y="1377"/>
+          <Item0 X="39" Y="1378"/>
         </Bookmarks>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit1>
       <Unit2>
-        <Filename Value="../Compiler_2016_12_7/compiler_code.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="814"/>
-        <CursorPos X="58" Y="863"/>
-        <UsageCount Value="1"/>
-      </Unit2>
-      <Unit3>
         <Filename Value="/usr/lib/lazarus/1.6/components/synedit/synedit.pp"/>
         <UnitName Value="SynEdit"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="4344"/>
         <CursorPos Y="4363"/>
-        <UsageCount Value="6"/>
-      </Unit3>
+        <UsageCount Value="5"/>
+      </Unit2>
     </Units>
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1425" TopLine="1408"/>
+        <Caret Line="188" Column="30" TopLine="160"/>
       </Position1>
       <Position2>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1422" TopLine="1423"/>
+        <Caret Line="211" Column="30" TopLine="183"/>
       </Position2>
       <Position3>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="59" Column="79" TopLine="43"/>
+        <Caret Line="859" Column="36" TopLine="834"/>
       </Position3>
       <Position4>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="188" Column="30" TopLine="160"/>
+        <Caret Line="868" Column="67" TopLine="840"/>
       </Position4>
       <Position5>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="211" Column="30" TopLine="183"/>
+        <Caret Line="1144" Column="59" TopLine="1116"/>
       </Position5>
       <Position6>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="859" Column="36" TopLine="834"/>
+        <Caret Line="1335" Column="40" TopLine="1310"/>
       </Position6>
       <Position7>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="868" Column="67" TopLine="840"/>
+        <Caret Line="1327" TopLine="1325"/>
       </Position7>
       <Position8>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1144" Column="59" TopLine="1116"/>
+        <Caret Line="1337" Column="28" TopLine="1321"/>
       </Position8>
       <Position9>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1335" Column="40" TopLine="1310"/>
+        <Caret Line="1329" TopLine="1321"/>
       </Position9>
       <Position10>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1327" TopLine="1325"/>
+        <Caret Line="1333" TopLine="1321"/>
       </Position10>
       <Position11>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1337" Column="28" TopLine="1321"/>
+        <Caret Line="1338" TopLine="1321"/>
       </Position11>
       <Position12>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1329" TopLine="1321"/>
+        <Caret Line="1340" TopLine="1321"/>
       </Position12>
       <Position13>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1333" TopLine="1321"/>
+        <Caret Line="1341" TopLine="1321"/>
       </Position13>
       <Position14>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1338" TopLine="1321"/>
+        <Caret Line="1343" TopLine="1321"/>
       </Position14>
       <Position15>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1340" TopLine="1321"/>
+        <Caret Line="1205" Column="55" TopLine="1185"/>
       </Position15>
       <Position16>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1341" TopLine="1321"/>
+        <Caret Line="1332" Column="24" TopLine="1311"/>
       </Position16>
       <Position17>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1343" TopLine="1321"/>
+        <Caret Line="1460" Column="27" TopLine="1442"/>
       </Position17>
       <Position18>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1205" Column="55" TopLine="1185"/>
+        <Caret Line="1465" TopLine="1442"/>
       </Position18>
       <Position19>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1332" Column="24" TopLine="1311"/>
+        <Caret Line="1414" TopLine="1396"/>
       </Position19>
       <Position20>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1460" Column="27" TopLine="1442"/>
+        <Caret Line="1165" TopLine="1149"/>
       </Position20>
       <Position21>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1465" TopLine="1442"/>
+        <Caret Line="1167" TopLine="1149"/>
       </Position21>
       <Position22>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1414" TopLine="1396"/>
+        <Caret Line="1171" TopLine="1149"/>
       </Position22>
       <Position23>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1165" TopLine="1149"/>
+        <Caret Line="1175" TopLine="1149"/>
       </Position23>
       <Position24>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1167" TopLine="1149"/>
+        <Caret Line="1344" TopLine="1326"/>
       </Position24>
       <Position25>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1171" TopLine="1149"/>
+        <Caret Line="1438" Column="79" TopLine="1421"/>
       </Position25>
       <Position26>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1175" TopLine="1149"/>
+        <Caret Line="1433" Column="69" TopLine="1422"/>
       </Position26>
       <Position27>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1344" TopLine="1326"/>
+        <Caret Line="1438" Column="79" TopLine="1422"/>
       </Position27>
       <Position28>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1438" Column="79" TopLine="1421"/>
+        <Caret Line="1494" Column="82" TopLine="1453"/>
       </Position28>
       <Position29>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1433" Column="69" TopLine="1422"/>
+        <Caret Line="1471" Column="37" TopLine="1457"/>
       </Position29>
       <Position30>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1438" Column="79" TopLine="1422"/>
+        <Caret Line="1490" Column="55" TopLine="1473"/>
       </Position30>
     </JumpHistory>
   </ProjectSession>
