@@ -1,0 +1,11 @@
+prototyp (schreibeLeer)
+
+haupt
+anfang
+  aufrufen (schreibeLeer)
+ende
+
+leer schreibeLeer 
+anfang
+  schreiben (nzeile + nzeile + nzeile + nzeile + nzeile + nzeile + nzeile + nzeile)
+ende
