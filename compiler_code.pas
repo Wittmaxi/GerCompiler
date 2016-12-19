@@ -1006,7 +1006,7 @@ end;
 
 function TCommand.getTextInString (i: string) : string;
 var textAccum   : string  = '';
-var counter     : integer = 0;
+var counter     : integer = 1;
 var parseLen    : integer = 0;
 var numberQuotes: integer = 0;
 var momChar     : string  = '';
@@ -1502,7 +1502,7 @@ begin
     while (counter < 255) do //does as long as the string-limit isn't reached!
       begin
          momChar := secondOp[counter];
-         if (length (secondOp) <= counter ) then //if the compared Text is empty, obviously, it doesnt do any good to continue comparing them.
+         if (length (secondOp) < counter ) then //if the compared Text is empty, obviously, it doesnt do any good to continue comparing them.
              begin
                 break;
              end;
