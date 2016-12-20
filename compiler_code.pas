@@ -209,6 +209,12 @@ begin
      synEdit3.lines.add ('jmp cmp_conversion_loop');
      synEdit3.lines.add ('cmp_leave_loop:');
      synEdit3.lines.add ('ret');
+     synEdit3.lines.add ('cmp_get_last_int:');
+     synEdit3.lines.add ('xor edx, edx');
+     synEdit3.lines.add ('mov ebx, 10');
+     synEdit3.lines.add ('idiv ebx');
+     synEdit3.lines.add ('ret');
+     synEdit3.lines.add ('cmp_write_ints');
 end;
 
 procedure TForm1.createFunctions ();
@@ -246,7 +252,7 @@ begin
     setAssemblerData('cmp_BLANK: db 0x0a');
     setAssemblerData('cmp_interr: db "error, You have typed in a non-Integer Character!", 0x0a');
     setAssemblerData('cmp_interrlen: equ $-cmp_interr');
-    setAssemblerBss ('cmp_buffer: resb 255');
+    setAssemblerBss ('cmp_write_caret: resb 8'); //for writing Integers als ASCII
     setAssemblerData('cmp_beep: db 0x07');//for the beeping sound, which is in the ASCII code for wathever reason
     setAssemblerText('section .text');
     setAssemblerText('global _start');
@@ -788,6 +794,10 @@ begin
            Form1.setMistake('Zeile ' + Form1.getLineNumber() + ': Variablen dürfen nur auserhalb einer Funktion deklariert werden!');
         end;
      name := copy (m_args, pos ('(', m_args) + 1, pos ('=', m_args) - 2);
+     if protoExists (name) then
+        begin
+           Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Die Namen von Variablen und Funktionen dürfen sich nicht überschneiden!');
+        end;
      if varDoesExist (name) then
          begin
                 Form1.setMistake ('Zeile ' + Form1.getLineNumber () + ': Die Variable gibt es schon.');
@@ -957,7 +967,7 @@ begin
                               Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Dieser Sprungpunkt existiert schon!');
                          end else
                              begin
-                                 Form1.setAssemblerTextFun(newArg + ':');
+                                 Form1.setAssemblerTextFun('cmp_goto_' + newArg + ':');
                                  setLength (gotoArray, length (gotoArray) + 1);
                                  gotoArray[i, 1] := newArg;
                                  gotoArray[i, 2] := functionIn;
@@ -983,7 +993,7 @@ begin
                                                    begin
                                                       if gotoArray[i, 2] = functionIn then
                                                          begin
-                                                           Form1.setAssemblerTextFun('jmp ' + newArg);
+                                                           Form1.setAssemblerTextFun('jmp ' + 'cmp_goto_' + newArg);
                                                          end else
                                                              begin
                                                                 Form1.setMistake ('Zeile ' + Form1.getLineNumber + ': Sprungpunkt dürfen nicht Funktionen überspringen!.');
@@ -994,7 +1004,7 @@ begin
                                                            gotoArray[i, 1] := newArg;
                                                            gotoArray[i, 2] := functionIn;
                                                            gotoArray[i, 3] := '0';
-                                                           Form1.setAssemblerTextFun('jmp ' + newArg);
+                                                           Form1.setAssemblerTextFun('jmp ' + 'cmp_goto_' + newArg);
                                                        end;
                                          end;
                               end;
@@ -1219,6 +1229,10 @@ begin
      if protoAllow then
          begin
             proto := m_args;      //copies the inside of the brackets into proto
+            if varDoesExist(getTextWOBrackets(proto)) then  //checks, if there is already a variable called like the new function
+                begin
+                  Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Die Namen von Variablen und Funktionen dürfen sich nicht überschneiden!');
+                end;
             proto := getTextWOBrackets(proto);  //gets the prototype without the surrounding brackets
             proto := lowerCase (proto);
             if NOT(protoExists (proto)) then //checks, if there is already a protoype called like this.
@@ -1466,6 +1480,7 @@ begin
                         end;
              end;
          inc (numberIf);
+         //Tests, if the Compared vars are Texts and Vars
          if ((op1Type = 'text') and (op2Type = 'var')) or ((op1Type = 'var') and (op2Type = 'text')) then   //if the compared types are strings and variables
              begin
                   if op1Type = 'var' then //checks if the variables are really string-typed
@@ -1485,7 +1500,19 @@ begin
                                  end;
                           end;
                    handleEquVarAndText(firstOp, secondOp);
-             end;
+             end else if (op1Type = 'var') and (op2Type = 'var') then //var and Var
+                      begin
+                          if vartable [getVarIndex (firstOp), 2] = vartable [getVarIndex (secondOp), 2] then //Wenn die Variablen einen anderen Datentypen haben.
+                             begin
+                                  handleEquVarAndText (firstOp, secondOp);
+                             end;
+                      end else if ((op1Type = 'zahl') and (op2Type = 'zahl')) or ((op1Type = 'text') and (op1Type = 'text')) then
+                          begin
+                              if NOT (firstOp = secondOP) then
+                                begin
+                                     Form1.setAssemblerTextFun('jmp cmp_after_if' + intToStr(numberIf));
+                                end;
+                          end;
 end;
 
 function TCommand.getStacklenght () : integer;
@@ -1501,17 +1528,18 @@ begin
     secondOp:= getTextInString(secondOp);
     while (counter < 255) do //does as long as the string-limit isn't reached!
       begin
-         momChar := secondOp[counter];
-         if (length (secondOp) < counter ) then //if the compared Text is empty, obviously, it doesnt do any good to continue comparing them.
-             begin
-                break;
-             end;
-         Form1.setAssemblerTextFun('mov al, [' + firstOp + ' + ' + intToStr (counter - 1) + ']');
-         Form1.setAssemblerTextFun('cmp al, ' + intToStr(ord (momChar))); //checks, if the ASCII-number of the Checked Text matches the vars text.
-         Form1.setAssemblerTextFun('jne cmp_after_if' + intToStr (numberIf));
-         inc (counter); // -.-
+         if counter > length (secondOp) then
+          begin
+               break;
+          end;
+          momChar := secondOp[counter];
+          Form1.setAssemblerTextFun('mov al, [' + firstOp + ' + ' + intToStr (counter - 1) + ']');
+          Form1.setAssemblerTextFun('cmp al, ' + intToStr(ord (momChar))); //checks, if the ASCII-number of the Checked Text matches the vars text.
+          Form1.setAssemblerTextFun('jne cmp_after_if' + intToStr (numberIf));
+          inc (counter); // -.-
       end;
 end;
+
 
 {$R *.lfm}
 
