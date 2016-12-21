@@ -214,7 +214,24 @@ begin
      synEdit3.lines.add ('mov ebx, 10');
      synEdit3.lines.add ('idiv ebx');
      synEdit3.lines.add ('ret');
-     synEdit3.lines.add ('cmp_write_ints');
+     synEdit3.lines.add ('cmp_write_ints:');   //gets the Integer to write into eax
+     synEdit3.lines.add ('xor ebx, ebx'); //empties ebx
+     synEdit3.lines.add ('mov ecx, cmp_write_caret'); //gets the pointer
+     synEdit3.lines.add ('add ecx, 8');
+     synEdit3.lines.add ('cmp_write_ints_loop:');
+     synEdit3.lines.add ('call cmp_get_last_int');
+     synEdit3.lines.add ('add dx, 0x30');     //adds 48 to edx
+     synEdit3.lines.add ('mov [ecx], dx');
+     synEdit3.lines.add ('dec ecx');
+     synEdit3.lines.add ('mov byte[ecx], 0x00');
+     synEdit3.lines.add ('dec ecx');
+     synEdit3.lines.add ('cmp ecx, cmp_write_caret');
+     synEdit3.lines.add ('jg cmp_write_ints_loop');
+     synEdit3.lines.add ('mov eax, 4');            //writes the found integer
+     synEdit3.lines.add ('mov ebx, 1');
+     synEdit3.lines.add ('mov edx, 100');
+     synEdit3.lines.add ('int 80h');
+     synEdit3.lines.add ('ret');
 end;
 
 procedure TForm1.createFunctions ();
@@ -649,11 +666,8 @@ begin
                                       Form1.setAssemblerTextFun ('int 80h');
                                  end else
                                      begin
-                                          Form1.setAssemblerTextFun ('mov eax, 4');  //assembly-stuff.
-                                          Form1.setAssemblerTextFun ('mov ebx, 1');
-                                          Form1.setAssemblerTextFun ('mov ecx, ' + text);
-                                          Form1.setAssemblerTextFun ('mov edx, 9'); //because it writes an integer
-                                          Form1.setAssemblerTextFun ('int 80h');
+                                          Form1.setAssemblerTextFun ('mov eax, [' + text + ']');
+                                          Form1.setAssemblerTextFun ('call cmp_write_ints');
                                      end;
                             end else
                                 begin
@@ -785,19 +799,23 @@ procedure TCommand.parseVar();    //neuevariable (name= wert) //automatische  ty
 var name: string = '';
 var val : string = '';
 begin
-     if wasInFunc = true then
+     if true then  //for better indentation.
         begin
-           Form1.setMistake('Zeile ' + Form1.getLineNumber() + ': Variablen dürfen nur am Anfang des Programmes deklariert werden!');
+           if wasInFunc = true then
+              begin
+                 Form1.setMistake('Zeile ' + Form1.getLineNumber() + ': Variablen dürfen nur am Anfang des Programmes deklariert werden!');
+              end;
+           if functionIn <> '' then
+              begin
+                 Form1.setMistake('Zeile ' + Form1.getLineNumber() + ': Variablen dürfen nur auserhalb einer Funktion deklariert werden!');
+              end;
+           name := copy (m_args, pos ('(', m_args) + 1, pos ('=', m_args) - 2);
+           if protoExists (name) then
+              begin
+                 Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Die Namen von Variablen und Funktionen dürfen sich nicht überschneiden!');
+              end;
         end;
-     if functionIn <> '' then
-        begin
-           Form1.setMistake('Zeile ' + Form1.getLineNumber() + ': Variablen dürfen nur auserhalb einer Funktion deklariert werden!');
-        end;
-     name := copy (m_args, pos ('(', m_args) + 1, pos ('=', m_args) - 2);
-     if protoExists (name) then
-        begin
-           Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Die Namen von Variablen und Funktionen dürfen sich nicht überschneiden!');
-        end;
+     /////////////////////////////////////////////////////////
      if varDoesExist (name) then
          begin
                 Form1.setMistake ('Zeile ' + Form1.getLineNumber () + ': Die Variable gibt es schon.');
@@ -825,7 +843,6 @@ begin
                              end;
                   end else
                   begin
-                        val:= getTextInString(m_args);
                         if typeCheck (val) = 'zahl' then
                                     begin
                                         varTable [length (vartable)-1, 2]:= 'zahl';
@@ -890,25 +907,8 @@ begin
     total := length (i);
     if iType = 'zahl' then
        begin
-          if total > 9 then
-             begin
-                Form1.setMistake ('Zeile ' + Form1.getLineNumber + ': Variablen der art "Zahl" dürfen nicht mehr als neunstellige Beträge beinhalten');
-                total := 9;
-             end;
-          Form1.setAssemblerBss (name + ': resb 9');
-          while counter < total do
-                begin
-                    showmessage (i);
-                   if i = '"' then
-                      begin
-                         Form1.setAssemblerText ('mov BYTE[' + name + ' + ' + intToStr (counter-1) + '], 0'); //inputs the single Char
-                         break;
-                      end else
-                             begin
-                                  Form1.setAssemblerText ('mov BYTE[' + name + ' + ' + intToStr (counter-1) + '], "' + copy (i, counter, 1) + '"'); //inputs the single Char
-                                  inc(counter); //increments counter
-                             end;
-                end;
+            Form1.setAssemblerBss  (name +': resw 2');
+            Form1.setAssemblerText ('mov dword[' + name+ '], ' + i);
        end else
        begin
             if total > 255 then
