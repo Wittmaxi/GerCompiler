@@ -121,6 +121,7 @@ type
                  procedure handleIf ();
                  procedure handleEqu();
                  procedure handleEquVarAndText (firstOp: string; secondOp: string);
+                 procedure handleEquVarAndInt  (firstOp: string; secondOp: string);
              private
                  var numberIf: integer;
              //Functions
@@ -229,7 +230,8 @@ begin
      synEdit3.lines.add ('jg cmp_write_ints_loop');
      synEdit3.lines.add ('mov eax, 4');            //writes the found integer
      synEdit3.lines.add ('mov ebx, 1');
-     synEdit3.lines.add ('mov edx, 100');
+     synEdit3.lines.add ('mov ecx, cmp_write_caret');
+     synEdit3.lines.add ('mov edx, 11');
      synEdit3.lines.add ('int 80h');
      synEdit3.lines.add ('ret');
 end;
@@ -269,12 +271,11 @@ begin
     setAssemblerData('cmp_BLANK: db 0x0a');
     setAssemblerData('cmp_interr: db "error, You have typed in a non-Integer Character!", 0x0a');
     setAssemblerData('cmp_interrlen: equ $-cmp_interr');
-    setAssemblerBss ('cmp_write_caret: resb 8'); //for writing Integers als ASCII
-    setAssemblerData('cmp_beep: db 0x07');//for the beeping sound, which is in the ASCII code for wathever reason
     setAssemblerText('section .text');
     setAssemblerText('global _start');
     setAssemblerText('_start:');
     setAssemblerBss ('section .bss');
+    setAssemblerBss ('cmp_write_caret: resb 10'); //for writing Integers als ASCII
     Zeile.resetCommand();
     Form1.mistake:= false;
 end;
@@ -633,6 +634,7 @@ begin
 end;
 
 procedure TCommand.handleWriteAsm(isText: Boolean; text: string);
+var counter : integer = 0;
 begin
      if isText = true then //handle the parsed information as text, Variables will come in later
      begin
@@ -666,7 +668,14 @@ begin
                                       Form1.setAssemblerTextFun ('int 80h');
                                  end else
                                      begin
-                                          Form1.setAssemblerTextFun ('mov eax, [' + text + ']');
+                                          Form1.setAssemblerTextFun ('xor eax, eax');
+                                          Form1.setAssemblerTextFun ('mov eax, dword[' + text + ']');
+                                          //Form1.setAssemblerTextFun ('mov dword[' + text + '], eax');
+                                          while counter < 9 do
+                                           begin
+                                                   Form1.setAssemblerTextFun ('mov BYTE[cmp_write_caret + ' + intToStr(counter) + '], 0x00'); //inputs the single Char
+                                                   inc (counter);
+                                           end;
                                           Form1.setAssemblerTextFun ('call cmp_write_ints');
                                      end;
                             end else
@@ -907,7 +916,7 @@ begin
     total := length (i);
     if iType = 'zahl' then
        begin
-            Form1.setAssemblerBss  (name +': resw 2');
+            Form1.setAssemblerBss  (name +': resd 1');
             Form1.setAssemblerText ('mov dword[' + name+ '], ' + i);
        end else
        begin
@@ -1500,11 +1509,14 @@ begin
                                  end;
                           end;
                    handleEquVarAndText(firstOp, secondOp);
-             end else if (op1Type = 'var') and (op2Type = 'var') then //var and Var
+             end else if (op1Type = 'var') and (op2Type = 'zahl') then //var and Var
                       begin
-                          if vartable [getVarIndex (firstOp), 2] = vartable [getVarIndex (secondOp), 2] then //Wenn die Variablen einen anderen Datentypen haben.
+                          if vartable [getVarIndex (firstOp), 2] <> 'zahl' then //Wenn die Variablen einen anderen Datentypen haben.
                              begin
-                                  handleEquVarAndText (firstOp, secondOp);
+                               Form1.setMistake ('Zeile ' + Form1.getLineNumber () + ': Du Darfst zahlen nur mit Zahlvariablen vergleichen!');
+                             end else
+                             begin
+                                  handleEquVarAndInt (firstOp, secondOp);
                              end;
                       end else if ((op1Type = 'zahl') and (op2Type = 'zahl')) or ((op1Type = 'text') and (op1Type = 'text')) then
                           begin
@@ -1538,8 +1550,32 @@ begin
           Form1.setAssemblerTextFun('jne cmp_after_if' + intToStr (numberIf));
           inc (counter); // -.-
       end;
+    if counter <> 255 then
+     begin
+       Form1.setAssemblerTextFun('mov al, [' + firstOp + ' + ' + intToStr (counter - 1) + ']');
+       Form1.setAssemblerTextFun('cmp al, 0'); //checks, if the ASCII-number of the Checked Text matches the vars text.
+       Form1.setAssemblerTextFun('jne cmp_after_if' + intToStr (numberIf));
+     end;
 end;
 
+
+procedure TCommand.handleEquVarAndInt (firstOp: string; secondOp: string);
+var counter: integer = 4;
+var momChar: char;
+begin
+    counter := length (secondOp);
+    Form1.setAssemblerTextFun('mov eax, dword[' + firstOp + ']');
+    Form1.setAssemblerTextFun('mov ecx, dword[' + firstOp + ']');
+    while (counter <> 0) do //does as long as the int-limit isn't reached!
+      begin
+          momChar := secondOp[counter];
+          Form1.setAssemblerTextFun('call cmp_get_last_int');
+          Form1.setAssemblerTextFun('cmp dl, ' + momChar); //checks, if the ASCII-number of the Checked Text matches the vars text.
+          Form1.setAssemblerTextFun('jne cmp_after_if' + intToStr (numberIf));
+          dec (counter); // -.-
+      end;
+    Form1.setAssemblerTextFun('mov dword[' + firstOp + '], ecx');
+end;
 
 {$R *.lfm}
 
