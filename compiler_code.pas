@@ -122,6 +122,7 @@ type
                  procedure handleEqu();
                  procedure handleEquVarAndText (firstOp: string; secondOp: string);
                  procedure handleEquVarAndInt  (firstOp: string; secondOp: string);
+                 procedure handleEquVarAndVar  (firstOp: string; secondOp: string);
              private
                  var numberIf: integer;
              //Functions
@@ -655,9 +656,19 @@ begin
                   Form1.setAssemblerTextFun('mov ecx, cmp_BLANK');
                   Form1.setAssemblerTextFun('mov edx, 1');   //params for sysCall 4
                   Form1.setAssemblerTextFun('int 80h');   //pokes the system
-                end else
+                end else if lowerCase (text) = 'nseite' then
                     begin
-                         if varDoesExist (text) then //checks if the pointed variable really DOES exist.
+                      counter := 0;
+                      while counter <= 100 do
+                      begin
+                         Form1.setAssemblerTextFun('mov eax, 4');
+                         Form1.setAssemblerTextFun('mov ebx, 1');
+                         Form1.setAssemblerTextFun('mov ecx, cmp_BLANK');
+                         Form1.setAssemblerTextFun('mov edx, 1');   //params for sysCall 4
+                         Form1.setAssemblerTextFun('int 80h');   //pokes the system
+                         inc (counter);
+                      end;
+                    end  else if varDoesExist (text) then //checks if the pointed variable really DOES exist.
                             begin
                               if varTable[getVarIndex(text), 2] = 'text' then
                                  begin
@@ -671,11 +682,6 @@ begin
                                           Form1.setAssemblerTextFun ('xor eax, eax');
                                           Form1.setAssemblerTextFun ('mov eax, dword[' + text + ']');
                                           //Form1.setAssemblerTextFun ('mov dword[' + text + '], eax');
-                                          while counter < 9 do
-                                           begin
-                                                   Form1.setAssemblerTextFun ('mov BYTE[cmp_write_caret + ' + intToStr(counter) + '], 0x00'); //inputs the single Char
-                                                   inc (counter);
-                                           end;
                                           Form1.setAssemblerTextFun ('call cmp_write_ints');
                                      end;
                             end else
@@ -683,7 +689,6 @@ begin
                                     Form1.setMistake ('Zeile ' + Form1.getLineNumber + ': Die von dir genannte Variable "' + text + '" existiert nicht');
                                 end;
                     end;
-           end;
 end;
 
 procedure TCommand.reset();
@@ -1108,7 +1113,7 @@ begin
                   Form1.setAssemblerTextFun('mov eax, 3');
                   Form1.setAssemblerTextFun('mov ebx, 1');
                   Form1.setAssemblerTextFun('mov ecx, ' + varName);
-                  Form1.setAssemblerTextFun('mov edx, 9');
+                  Form1.setAssemblerTextFun('mov edx, 4');
                   Form1.setAssemblerTextFun('int 80h'); //calls the Kernel
                   Form1.setAssemblerTextFun('mov eax, ' + varName); //moves the Pointer of varname into eax, which serves to pass an arguement
                   Form1.setAssemblerTextFun('call cmp_sorting');
@@ -1524,7 +1529,10 @@ begin
                                 begin
                                      Form1.setAssemblerTextFun('jmp cmp_after_if' + intToStr(numberIf));
                                 end;
-                          end;
+                          end else if (op1Type = 'var') and (op2Type = 'var') then
+                              begin
+                                     handleEquVarAndVar(firstOp, secondOp);
+                              end;
 end;
 
 function TCommand.getStacklenght () : integer;
@@ -1575,6 +1583,37 @@ begin
           dec (counter); // -.-
       end;
     Form1.setAssemblerTextFun('mov dword[' + firstOp + '], ecx');
+end;
+
+procedure TCommand.handleEquVarAndVar (firstOp: string; secondOp: string);
+var counter : integer = 0;
+begin
+    if vartable[getVarIndex(firstOp), 2] = vartable [getVarIndex(secondOp), 2] then
+     begin
+        if vartable[getVarIndex(firstOp), 2] = 'text' then
+         begin
+         //Straigth forward: I take the variable, split it into little Pieces, and do the same with the string.
+            while (counter < 255) do //does as long as the string-limit isn't reached!
+              begin
+                  Form1.setAssemblerTextFun('mov al, [' + firstOp  + ' + ' + intToStr (counter) + ']');
+                  Form1.setAssemblerTextFun('mov bl, [' + secondOp + ' + ' + intToStr (counter) + ']');
+                  Form1.setAssemblerTextFun('cmp al, bl');
+                  Form1.setAssemblerTextFun('jne cmp_after_if' + intToStr (numberIf));
+                  inc (counter); // -.-
+              end;
+          end else
+              begin
+                 secondOp:= getTextInString(secondOp);
+                 Form1.setAssemblerTextFun('mov eax, dword[' + firstOp  + ']');
+                 Form1.setAssemblerTextFun('mov ebx, dword[' + secondOp + ']');
+                 Form1.setAssemblerTextFun('cmp al, bl');
+                 Form1.setAssemblerTextFun('jne cmp_after_if' + intToStr (numberIf));
+                 inc (counter); // -.-
+              end;
+     end else
+         begin
+              Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Es dürfen nur Variablen der gleichen Art verglichen werden!');
+         end;
 end;
 
 {$R *.lfm}
