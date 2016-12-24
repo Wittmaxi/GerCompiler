@@ -1094,6 +1094,11 @@ var varName : string;
 var counter : integer = 0;
 var total   : integer = 0;
 begin
+    Form1.setAssemblerTextFun('mov eax,54');
+    Form1.setAssemblerTextFun('mov ebx,0');
+    Form1.setAssemblerTextFun('mov ecx,0x540B');
+    Form1.setAssemblerTextFun('xor edx, edx');
+    Form1.setAssemblerTextFun('int 0x80');
      if functionIn = '' then
         begin
            Form1.setMistake('Zeile ' + Form1.getLineNumber() + ': Der Befehl eingeben muss in einer Funktion stehen!');
@@ -1104,7 +1109,7 @@ begin
            counter := 0;
            if varTable [getVarIndex (varName), 2] = 'zahl' then //Integer-types
                begin
-                  total := 9;
+                  total := 4;
                  while counter < total do
                   begin
                           Form1.setAssemblerTextFun ('mov BYTE[' + varName + ' + ' + intToStr(counter) + '], "' + '' + '"'); //inputs the single Char
