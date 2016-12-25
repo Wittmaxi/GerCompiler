@@ -1088,17 +1088,12 @@ end;
 ////////////////////////77777777777777777////////////////////////////////////////////////////////////////77
 ////////////////////////////////////INPUT//////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 procedure TCommand.handleInputAsm ();
 var varName : string;
 var counter : integer = 0;
 var total   : integer = 0;
 begin
-    Form1.setAssemblerTextFun('mov eax,54');
-    Form1.setAssemblerTextFun('mov ebx,0');
-    Form1.setAssemblerTextFun('mov ecx,0x540B');
-    Form1.setAssemblerTextFun('xor edx, edx');
-    Form1.setAssemblerTextFun('int 0x80');
      if functionIn = '' then
         begin
            Form1.setMistake('Zeile ' + Form1.getLineNumber() + ': Der Befehl eingeben muss in einer Funktion stehen!');
@@ -1114,21 +1109,15 @@ begin
                   begin
                           Form1.setAssemblerTextFun ('mov BYTE[' + varName + ' + ' + intToStr(counter) + '], "' + '' + '"'); //inputs the single Char
                           inc (counter);
-                  end;
+                  end;                            //BUG: The thing doesn't get parsed right. Solve: read in char for char and check for 0x0a...
                   Form1.setAssemblerTextFun('mov eax, 3');
                   Form1.setAssemblerTextFun('mov ebx, 1');
                   Form1.setAssemblerTextFun('mov ecx, ' + varName);
                   Form1.setAssemblerTextFun('mov edx, 4');
                   Form1.setAssemblerTextFun('int 80h'); //calls the Kernel
-                  Form1.setAssemblerTextFun('mov eax, ' + varName); //moves the Pointer of varname into eax, which serves to pass an arguement
+                  Form1.setAssemblerTextFun('mov eax, dword[' + varName + ']'); //moves the Pointer of varname into eax, which serves to pass an arguement
                   Form1.setAssemblerTextFun('call cmp_sorting');
-                  Form1.setAssemblerTextFun('mov [' + varName + '], eax');
-                  //this flushes the new line Character
-                  Form1.setAssemblerTextFun('mov eax,54');
-                  Form1.setAssemblerTextFun('mov ebx,0');
-                  Form1.setAssemblerTextFun('mov ecx,0x540B');
-                  Form1.setAssemblerTextFun('xor edx, edx');
-                  Form1.setAssemblerTextFun('int 0x80');
+                  Form1.setAssemblerTextFun('mov dword[' + varName + '], eax');
                end else
                    begin
                       total := 255;
@@ -1142,17 +1131,11 @@ begin
                         Form1.setAssemblerTextFun('mov ecx, ' + varName);
                         Form1.setAssemblerTextFun('mov edx, 255');
                         Form1.setAssemblerTextFun('int 80h'); //calls the Kernel
-                        //flushes the newLine character
-                        Form1.setAssemblerTextFun('mov eax,54');
-                        Form1.setAssemblerTextFun('mov ebx,0');
-                        Form1.setAssemblerTextFun('mov ecx,0x540B');
-                        Form1.setAssemblerTextFun('xor edx, edx');
-                        Form1.setAssemblerTextFun('int 0x80');
                    end;
         end;
 end;
 
-function TCommand.getTextWOBrackets (i: string) : string; //get the Tex5 inside Brackets (Mainly, because m_args delivers the Brackets)
+function TCommand.getTextWOBrackets (i: string) : string; //get the Text inside Brackets (Mainly, because m_args delivers the Brackets)
 begin
      getTextWOBrackets := copy (i, 2, pos (')', i) - 2);
 end;
