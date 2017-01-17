@@ -7,5 +7,5 @@ ende
 
 leer schreibeLeer 
 anfang
-  schreiben (nzeile + nzeile + nzeile + nzeile + nzeile + nzeile + nzeile + nzeile)
+  schreiben (nzeile + nzeile + nzeile + nzeile + nzeile + nzeile + nzeile + nzeile + "Hello World ;-)")
 ende
