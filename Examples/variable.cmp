@@ -1,0 +1,10 @@
+neuevariable (zahl1 = 123)
+neuevariable (zahl2 = 1234)
+
+haupt
+anfang
+    schreiben (zahl1 + zahl2 + nzeile)
+    eingeben (zahl1)
+    schreiben (zahl1 + nzeile)
+    schreiben (nseite)
+ende
