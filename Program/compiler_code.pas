@@ -190,6 +190,11 @@ begin                                {
      synEdit3.lines.add ('cmp_exit_sorting_loop:');
      synEdit3.lines.add ('ret');    }
      synEdit3.lines.add ('cmp_interror:');
+     synEdit3.lines.add ('mov eax, 3');
+     synEdit3.lines.add ('mov ebx, 1');
+     synEdit3.lines.add ('mov ecx, cmp_buffer');
+     synEdit3.lines.add ('mov edx, 1000000');  //drains the terminal completely
+     synEdit3.lines.add ('int 80h');
      synEdit3.lines.add ('mov eax, 4');
      synEdit3.lines.add ('mov ebx, 1');
      synEdit3.lines.add ('mov ecx, cmp_interr');
@@ -233,9 +238,17 @@ begin                                {
      synEdit3.lines.add ('mov eax, 4');            //writes the found integer
      synEdit3.lines.add ('mov ebx, 1');
      synEdit3.lines.add ('mov ecx, cmp_write_caret');
-     synEdit3.lines.add ('mov edx, 11');
+     synEdit3.lines.add ('mov edx, 9');
      synEdit3.lines.add ('int 80h');
      synEdit3.lines.add ('ret');
+     synEdit3.lines.add ('cmp_int_len_error:');
+     synEdit3.lines.add ('mov eax, 4');
+     synEdit3.lines.add ('mov ebx, 1');
+     synEdit3.lines.add ('mov ecx, cmp_intlenerr');
+     synEdit3.lines.add ('mov edx, cmp_intlenerr_len');
+     synEdit3.lines.add ('int 80h');
+     synEdit3.lines.add ('mov eax, 1');
+     synEdit3.lines.add ('int 80h');
 end;
 
 procedure TForm1.createFunctions ();
@@ -251,8 +264,8 @@ begin
          Button2.Click();                                                //start of by saving the Program
          //runs the different things on the TOOLCHAIN
          synEdit3.Lines.saveToFile (saveDialog1.Filename + '.asm');
-         sysUtils.ExecuteProcess   ('/usr/bin/nasm', '-f elf ' + saveDialog1.FileName + '.asm', []);
-         sysUtils.ExecuteProcess   ('/usr/bin/ld', saveDialog1.Filename + '.o -e -static -m elf_i386 -s -o ' + saveDialog1.FileName + '.exec', []);
+         sysUtils.ExecuteProcess   ('/usr/bin/nasm', '-f elf64 ' + saveDialog1.FileName + '.asm', []);
+         sysUtils.ExecuteProcess   ('/usr/bin/ld', saveDialog1.Filename + '.o -o ' + saveDialog1.FileName + '.exec', []);
          sysUtils.ExecuteProcess   ('/usr/bin/clear', '', []);
          sysUtils.ExecuteProcess   (saveDialog1.Filename + '.exec', '', []);
     end else
@@ -273,10 +286,13 @@ begin
     setAssemblerData('cmp_BLANK: db 0x0a');
     setAssemblerData('cmp_interr: db "Fehler: an dieser Stelle des Programms war eine Zahl erforderlich!", 0x0a');
     setAssemblerData('cmp_interrlen: equ $-cmp_interr');
+    setAssemblerData('cmp_intlenerr: db "Fehler: Die eingegebene Zahl war zu gross", 0x0a');
+    setAssemblerData('cmp_intlenerr_len: equ $-cmp_intlenerr');
     setAssemblerText('section .text');
     setAssemblerText('global _start');
     setAssemblerText('_start:');
     setAssemblerBss ('section .bss');
+    setAssemblerBss ('cmp_input_buffer: resb 1');
     setAssemblerBss ('cmp_write_caret: resb 10'); //for writing Integers als ASCII
     setAssemblerBss ('cmp_buffer: resb 255'); //reserves 255 Bytes for this variable!
     Zeile.resetCommand();
@@ -516,16 +532,19 @@ begin
 end;
 
 procedure TLine.deleteComments();
+var momString: string;
 begin
   getStringLength();                                           //deletes evth. after the two charakters '//'
-  delete         (m_string, pos ('//', m_string), m_stringLength);
+  momString := m_string;
+  delete (momString, pos (m_command.getTextInString(m_string), m_string), length (m_command.getTextInString(m_string)));
+  if pos ('//', m_string) <> 0 then
+     delete (m_string, pos ('//', m_string) + length (m_command.getTextInString(m_string)), m_stringLength);
 end;
 
 procedure TLine.setLine(i: string);        //Setter --> no getter needed.
 begin
   m_string:= i;
 end;
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO//
@@ -613,7 +632,7 @@ begin
        end
     else
       begin
-           case lowercase(m_command) of
+           case lowercase(m_command) of   //searches for the keyword -.-
               'schreiben'   : writeOut ();
               'neuevariable': parseVar ();
               'punktsetzen' : parseGoto();
@@ -1135,53 +1154,76 @@ begin
                begin
                   //BUG: The thing doesn't get parsed right. Solve: read in char for char and check for 0x0a..
                   Form1.setAssemblerTextFun(';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;,,');
-                 {
-                  Form1.setAssemblerTextFun('mov dword[' + varName + '], 0000');
-                  Form1.setAssemblerTextFun('xor ebx, ebx');
-                  Form1.setAssemblerTextFun('xor eax, eax');
-                  Form1.setAssemblerTextFun('mov ebx, ' + varName);
-                  Form1.setAssemblerTextFun('push ebx');
-                  Form1.setAssemblerTextFun('push eax');
-                  Form1.setAssemblerTextFun('jmp cmp_input_loop' + intToStr (numberInputs));
-                  Form1.setAssemblerTextFun('cmp_setup_input' + intToStr(numberInputs) + ':');
-                  Form1.setAssemblerTextFun('pop eax');
-                  Form1.setAssemblerTextFun('pop ebx');
-                  Form1.setAssemblerTextFun('add ebx, 1');
-                  Form1.setAssemblerTextFun('cmp ebx, ' + varName);
-                  Form1.setAssemblerTextFun('je cmp_after_input' + intToStr(numberInputs));
-                  Form1.setAssemblerTextFun('cmp_input_loop' + intToStr (numberInputs) + ':');
-                  Form1.setAssemblerTextFun('push ebx');
-                  Form1.setAssemblerTextFun('push eax');
+                  Form1.setAssemblerTextFun('mov edx, 0000');
+                  Form1.setAssemblerTextFun('mov [cmp_buffer], DWORD 00000000');
+                  Form1.setAssemblerTextFun('input_loop' + intToStr(numberInputs) + ':');
+                  Form1.setAssemblerTextFun('mov [cmp_input_buffer], byte 0000');
+                  Form1.setAssemblerTextFun('inc edx');
+                  Form1.setAssemblerTextFun('push dx');
                   Form1.setAssemblerTextFun('mov eax, 3');
                   Form1.setAssemblerTextFun('mov ebx, 1');
                   Form1.setAssemblerTextFun('mov ecx, cmp_input_buffer');
                   Form1.setAssemblerTextFun('mov edx, 1');
                   Form1.setAssemblerTextFun('int 80h');
-                  Form1.setAssemblerTextFun('pop eax');
-                  Form1.setAssemblerTextFun('pop ebx');
-                  Form1.setAssemblerTextFun('mov eax, [cmp_input_buffer]');
-                  Form1.setAssemblerTextFun('call cmp_sorting');
-                  Form1.setAssemblerTextFun('cmp eax, 0x0a');
-                  Form1.setAssemblerTextFun('je cmp_after_input' + intToStr(numberInputs));
-                  Form1.setAssemblerTextFun('mov [ebx], eax');
-                  Form1.setAssemblerTextFun('dec ebx');
-                  Form1.setAssemblerTextFun('push ebx');
-                  Form1.setAssemblerTextFun('push eax');
-                  Form1.setAssemblerTextFun('jmp cmp_input_loop' + intToStr (numberInputs));
-                  Form1.setAssemblerTextFun('cmp_after_input' + intToStr(numberInputs) + ':');    }
+                  Form1.setAssemblerTextFun('mov ecx, [cmp_input_buffer]');
+                  Form1.setAssemblerTextFun('cmp ecx, 0x0a');
+                  Form1.setAssemblerTextFun('je after_input_loop' + intToStr(numberInputs));
+                  Form1.setAssemblerTextFun('cmp ecx, 0x30');
+                  Form1.setAssemblerTextFun('jl cmp_interror');
+                  Form1.setAssemblerTextFun('cmp ecx, 0x39');
+                  Form1.setAssemblerTextFun('jg cmp_interror');
+                  Form1.setAssemblerTextFun('pop dx');
+                  Form1.setAssemblerTextFun('cmp edx, 5');
+                  Form1.setAssemblerTextFun('je cmp_skip_input_loop' + intToStr(numberInputs));
+                  Form1.setAssemblerTextFun('sub ecx, 0x30');
+                  Form1.setAssemblerTextFun('mov ebx, DWORD [cmp_buffer]');
+                  Form1.setAssemblerTextFun('mov eax, 10');
+                  Form1.setAssemblerTextFun('imul ebx, eax');
+                  Form1.setAssemblerTextFun('add ebx, ecx');
+                  Form1.setAssemblerTextFun('mov [cmp_buffer], ebx');
+                  Form1.setAssemblerTextFun('cmp_skip_input_loop' + intToStr(numberInputs) + ':');
+                  Form1.setAssemblerTextFun('jmp input_loop' + intToStr(numberInputs));
+                  Form1.setAssemblerTextFun('after_input_loop' + intToStr(numberInputs) + ':');
+                  Form1.setAssemblerTextFun('pop dx');
+                  Form1.setAssemblerTextFun('cmp dx, 5');
+                  Form1.setAssemblerTextFun('jg cmp_int_len_error');
+                  Form1.setAssemblerTextFun('mov dword [' + varName + '], 0000');
+                  Form1.setAssemblerTextFun('xor ecx, ecx');
+                  Form1.setAssemblerTextFun('mov ecx, DWORD [cmp_buffer]');
+                  Form1.setAssemblerTextFun('mov [' + varName + '],dword ecx');
                end else
                    begin
                       total := 255;
                       while counter < total do
                        begin
-                               Form1.setAssemblerTextFun ('mov BYTE[' + varName + ' + ' + intToStr(counter) + '], "' + '' + '"'); //inputs the single Char
+                               Form1.setAssemblerTextFun ('mov BYTE[' + varName + ' + ' + intToStr(counter) + '], 0'); //inputs the single Char
                                inc (counter);
                        end;
+                        Form1.setAssemblerTextFun(';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;,,');
+                        Form1.setAssemblerTextFun('mov edx, 0000');
+                        Form1.setAssemblerTextFun('mov [cmp_buffer], DWORD 00000000');
+                        Form1.setAssemblerTextFun('input_loop' + intToStr(numberInputs) + ':');
+                        Form1.setAssemblerTextFun('mov [cmp_input_buffer], byte 0000');
+                        Form1.setAssemblerTextFun('inc edx');
+                        Form1.setAssemblerTextFun('push dx');
                         Form1.setAssemblerTextFun('mov eax, 3');
                         Form1.setAssemblerTextFun('mov ebx, 1');
-                        Form1.setAssemblerTextFun('mov ecx, ' + varName);
-                        Form1.setAssemblerTextFun('mov edx, 255');
-                        Form1.setAssemblerTextFun('int 80h'); //calls the Kernel
+                        Form1.setAssemblerTextFun('mov ecx, cmp_input_buffer');
+                        Form1.setAssemblerTextFun('mov edx, 1');
+                        Form1.setAssemblerTextFun('int 80h');
+                        Form1.setAssemblerTextFun('mov ecx, [cmp_input_buffer]');
+                        Form1.setAssemblerTextFun('cmp ecx, 0x0a');
+                        Form1.setAssemblerTextFun('je after_input_loop' + intToStr(numberInputs));
+                        Form1.setAssemblerTextFun('pop dx');
+                        Form1.setAssemblerTextFun('cmp edx, 255');
+                        Form1.setAssemblerTextFun('je cmp_skip_input_loop' + intToStr(numberInputs));
+                        Form1.setAssemblerTextFun('cmp_skip_input_loop' + intToStr(numberInputs) + ':');
+                        Form1.setAssemblerTextFun('jmp input_loop' + intToStr(numberInputs));
+                        Form1.setAssemblerTextFun('after_input_loop' + intToStr(numberInputs) + ':');
+                        Form1.setAssemblerTextFun('pop dx');
+                        Form1.setAssemblerTextFun('cmp dx, 255');
+                        Form1.setAssemblerTextFun('jg cmp_int_len_error');
+                        Form1.setAssemblerTextFun('mov [' + varName + '],DWORD [cmp_buffer]');
                    end;
         end;
 end;
