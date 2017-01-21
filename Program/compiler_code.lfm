@@ -1,7 +1,7 @@
 object Form1: TForm1
-  Left = 721
+  Left = 538
   Height = 366
-  Top = 253
+  Top = 371
   Width = 642
   Caption = 'Compiler'
   ClientHeight = 366
@@ -17,7 +17,7 @@ object Form1: TForm1
     Align = alTop
     Caption = 'Tools'
     ClientHeight = 45
-    ClientWidth = 638
+    ClientWidth = 640
     TabOrder = 0
     object Button1: TButton
       Left = 0
@@ -558,7 +558,7 @@ object Form1: TForm1
     Align = alClient
     Caption = 'Debug'
     ClientHeight = 128
-    ClientWidth = 638
+    ClientWidth = 640
     TabOrder = 2
     inline SynEdit2: TSynEdit
       Left = 0
@@ -1067,7 +1067,7 @@ object Form1: TForm1
       Left = 445
       Height = 128
       Top = 0
-      Width = 193
+      Width = 195
       Align = alClient
       Font.Height = 13
       Font.Name = 'DejaVu Sans Mono'
