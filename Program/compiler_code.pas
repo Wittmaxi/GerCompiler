@@ -288,6 +288,8 @@ begin
     setAssemblerData('cmp_interrlen: equ $-cmp_interr');
     setAssemblerData('cmp_intlenerr: db "Fehler: Die eingegebene Zahl war zu gross", 0x0a');
     setAssemblerData('cmp_intlenerr_len: equ $-cmp_intlenerr');
+    setAssemblerData('cmp_final_message: db "Das Programm wurd erfolgreich ausgeführt. Drücke <enter>, um die Ausführung zu beenden", 0x0a');
+    setAssemblerData('cmp_final_message_len: equ $- cmp_final_message');
     setAssemblerText('section .text');
     setAssemblerText('global _start');
     setAssemblerText('_start:');
@@ -362,8 +364,17 @@ begin
 
      //terminate run of the program without "segfaulting"! (System call sys_close)
      synEdit3.Lines.add('call func_main');
-
-     synEdit3.Lines.add('mov eax, 1');
+     synEdit3.lines.add('mov eax, 4');  //Tells the user, the program has terminated
+     synEdit3.lines.add('mov ebx, 1');
+     synEdit3.lines.add('mov ecx, cmp_final_message');
+     synEdit3.lines.add('mov edx, cmp_final_message_len');
+     synEdit3.lines.add('int 80h');
+     synEdit3.Lines.add('mov eax, 3');
+     synEdit3.lines.add('mov ebx, 1');    //collects the garbage input
+     synEdit3.lines.add('mov ecx, cmp_buffer');
+     synEdit3.lines.add('mov edx, 1000');
+     synEdit3.lines.add('int 80h');
+     synEdit3.Lines.add('mov eax, 1');    //finally quits
      synEdit3.Lines.add('mov ebx, 0');
      synEdit3.Lines.add('int 80h');
 
@@ -535,10 +546,7 @@ procedure TLine.deleteComments();
 var momString: string;
 begin
   getStringLength();                                           //deletes evth. after the two charakters '//'
-  momString := m_string;
-  delete (momString, pos (m_command.getTextInString(m_string), m_string), length (m_command.getTextInString(m_string)));
-  if pos ('//', m_string) <> 0 then
-     delete (m_string, pos ('//', m_string) + length (m_command.getTextInString(m_string)), m_stringLength);
+  delete (m_string, pos ('//', m_string), length (m_string));
 end;
 
 procedure TLine.setLine(i: string);        //Setter --> no getter needed.

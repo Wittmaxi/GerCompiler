@@ -1599,11 +1599,13 @@ object Form1: TForm1
   end
   object OpenDialog1: TOpenDialog
     DefaultExt = '.cmp'
+    Filter = 'Compiler-Dateien|*.cmp|Alle Dateien|*.*'
     left = 280
     top = 24
   end
   object SaveDialog1: TSaveDialog
     DefaultExt = '.cmp'
+    Filter = 'Compiler Dateien|*.cmp|Alle Dateien|*.*'
     left = 176
     top = 24
   end
