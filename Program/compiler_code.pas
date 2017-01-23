@@ -1006,27 +1006,30 @@ begin
                               Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Dieser Sprungpunkt existiert schon!');
                          end else
                              begin
-                                if functionIn = gotoArray[i, 2] then
-                                   begin
                                      Form1.setAssemblerTextFun('cmp_goto_' + newArg + ':');
-                                     setLength (gotoArray, length (gotoArray) + 1);
-                                     gotoArray[i, 1] := newArg;
-                                     gotoArray[i, 2] := functionIn;
-                                     gotoArray[i, 3] := '1';
-                                    end else
+                                     if foundLa then
                                         begin
-                                           Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Sprungpunkte dürfen Funktionen nicht überspringen!');
-                                        end;
+                                              if (gotoArray [i, 3] = '1') and (gotoArray [i, 2] <> functionIn) then
+                                                    begin
+                                                      Form1.setMistake ('Zeile ' + Form1.getLineNumber () + ': Sprungpunkte dürfen Funktionen nicht überspringen!');
+                                                    end;
+                                                       gotoArray[i, 3] := '1';
+                                        end else
+                                            begin
+                                                 setLength (gotoArray, length (gotoArray) +1);
+                                                 gotoArray [length (gotoArray) -1, 1] := newArg;
+                                                 gotoArray [length (gotoArray) -1, 2] := functionIn;
+                                                 gotoArray [length (gotoArray) -1, 3] := '1';
+                                            end;
                              end;
                    end;
-        end else if m_command = 'gehezu' then
+            end else if m_command = 'gehezu' then
                               begin
                                   if copy (newArg, 0, 3) = 'cmp' then
                                      begin
                                         Form1.setMistake ('Zeile ' + Form1.getLineNumber + ': Der Name eines Sprungpunktes darf nicht mit cmp anfangen.');
                                      end else
-                                         begin
-                                            for i := 0 to length (gotoArray) -1 do
+                                         begin                                            for i := 0 to length (gotoArray) -1 do
                                             begin
                                                if gotoArray[i, 1] = newArg then
                                                   begin
@@ -1034,7 +1037,7 @@ begin
                                                      break;
                                                   end;
                                             end;
-                                                if foundLa = true then
+                                                if foundLa then
                                                    begin
                                                       if gotoArray[i, 2] = functionIn then
                                                          begin
@@ -1046,9 +1049,9 @@ begin
                                                    end else
                                                        begin
                                                            setLength (gotoArray, length (gotoArray) + 1);
-                                                           gotoArray[i, 1] := newArg;
-                                                           gotoArray[i, 2] := functionIn;
-                                                           gotoArray[i, 3] := '0';
+                                                           gotoArray[length (gotoArray) -1, 1] := newArg;
+                                                           gotoArray[length (gotoArray) -1, 2] := functionIn;
+                                                           gotoArray[length (gotoArray) -1, 3] := '0';
                                                            Form1.setAssemblerTextFun('jmp ' + 'cmp_goto_' + newArg);
                                                        end;
                                          end;
@@ -1460,6 +1463,7 @@ begin
                            begin
                                 gotoDeployed := false;
                                 break;
+                                Form1.setMistake (gotoArray [counter, 1]);
                            end;
                        inc (counter);
                   end;
