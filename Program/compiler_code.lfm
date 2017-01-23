@@ -67,6 +67,7 @@ object Form1: TForm1
     Gutter.MouseActions = <>
     RightGutter.Width = 0
     RightGutter.MouseActions = <>
+    Highlighter = SynAnySyn1
     Keystrokes = <    
       item
         Command = ecUp
@@ -1573,29 +1574,43 @@ object Form1: TForm1
   end
   object SynAnySyn1: TSynAnySyn
     Enabled = False
-    Comments = []
+    CommentAttri.Foreground = 6981892
+    Comments = [csAnsiStyle]
     DetectPreprocessor = False
     IdentifierChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz'
+    KeyAttri.Foreground = 35839
+    KeyAttri.Style = []
+    ConstantAttri.Foreground = clNone
+    ObjectAttri.Foreground = 12287
     KeyWords.Strings = (
-      'CMP_BLANK'
-      'EAX'
-      'EBX'
-      'ECX'
-      'EDX'
-      'INT'
-      'MOV'
-      'SECTION .BSS'
-      'SECTION .DATA'
-      'SECTION .TEXT'
+      'AUFRUFEN'
+      'EINGEBEN'
+      'GEHEZU'
+      'NEUEVARIABLE'
+      'PROTOTYP'
+      'PUNKTSETZEN'
+      'SCHREIBEN'
     )
-    StringAttri.Foreground = clNavy
+    Constants.Strings = (
+      'ANFANG'
+      'ENDE'
+      'HAUPT'
+      'LEER'
+      'WENN'
+    )
+    Objects.Strings = (
+      'NSEITE'
+      'NZEILE'
+    )
+    StringAttri.Foreground = 9065761
+    StringAttri.FrameColor = clBlack
     StringDelim = sdDoubleQuote
     Markup = False
     Entity = False
     DollarVariables = False
     ActiveDot = False
-    left = 496
-    top = 240
+    left = 520
+    top = 96
   end
   object OpenDialog1: TOpenDialog
     DefaultExt = '.cmp'
