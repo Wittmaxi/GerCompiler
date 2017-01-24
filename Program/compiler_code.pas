@@ -76,7 +76,7 @@ type
                    var functionIn : string; //the Function were momentary in.
                    var needBegin  : boolean; //If a begin sequence is required on the next Line.
                    var indentStack: array of array [1 .. 3] of string; //name|type|lineNumber of start//Used for begin-end; sequences.
-                   var prototypes : array of array [1 .. 2] of string; //name|solved//If not solved, error
+                   var prototypes : array of array [1 .. 3] of string; //name|solved|Type//If not solved, error
                    var protoAllow : boolean; //If protoypes aren't allowed (after the first function)
                    var gotoArray  : array of array [1 .. 3] of string;  //name|scope|deployed
                    var wasInFunc  : boolean; //if there was ever a function declared (for variables and prototypes)
@@ -94,11 +94,15 @@ type
                    var m_numberMessages: integer;
              ////////////////////Variables///////////////////////////////
              private //functions
-                   procedure parseVar    ();
-                   function  typeCheck   (val: string) : string;
-                   function  varDoesExist(i: string)   : boolean;
-                   function  getVarIndex (i: string)   : integer;
-                   procedure handleVarAsm(i: string; name: string; itype: string);
+                   procedure parseVar     ();
+                   function  typeCheck    (val: string) : string;
+                   function  varDoesExist (i: string)   : boolean;
+                   function  getVarIndex  (i: string)   : integer;
+                   procedure handleVarAsm (i: string; name: string; itype: string);
+                   procedure handleVarOp  ();
+                   procedure incrementVars(varName: string);
+                   procedure decrementVars(varName: string);
+                   procedure assignFunction(functionName: string);
                    //procedure checkvarComm(com: string);
              private //variables
                      var varTable : array of array [1..2] of string; //vartable Column 1 = name, Column 2 = type
@@ -173,22 +177,7 @@ implementation
 { TForm1 }
 
 procedure TForm1.createIntCheck();
-begin                                {
-     synEdit3.lines.add ('cmp_sorting:');
-     synEdit3.lines.add ('mov ebx, 0');
-     synEdit3.lines.add ('cmp_sorting_loop:');
-     synEdit3.lines.add ('inc ebx');
-     synEdit3.lines.add ('cmp byte [eax], 48');
-     synEdit3.lines.add ('jl cmp_interror');
-     synEdit3.lines.add ('cmp byte [eax], 57');
-     synEdit3.lines.add ('jg cmp_interror');
-     synEdit3.lines.add ('cmp byte [eax], 0');
-     synEdit3.lines.add ('jz cmp_exit_sorting_loop');
-     synEdit3.lines.add ('cmp ebx, 10');
-     synEdit3.lines.add ('je cmp_exit_sorting_loop');
-     synEdit3.lines.add ('jmp cmp_sorting_loop');
-     synEdit3.lines.add ('cmp_exit_sorting_loop:');
-     synEdit3.lines.add ('ret');    }
+begin
      synEdit3.lines.add ('cmp_interror:');
      synEdit3.lines.add ('mov eax, 3');
      synEdit3.lines.add ('mov ebx, 1');
@@ -1269,8 +1258,9 @@ begin
           handleIF();
           validKeyWord := true;
         end;
-    if varDoesExist (copy (m_fullLine, 0, pos ('=', m_fullline) + 1)) then  //for operations on variables
+    if varDoesExist (copy (m_fullLine, 0, pos ('=', m_fullline) -1)) then  //for operations on variables
         begin
+          handleVarOp();
           validKeyWord := true;
         end;
     if (validKeyWord = false) and (m_fullLine <> '') then //if the Keyword was invalid
@@ -1304,6 +1294,13 @@ begin
              Form1.setAssemblerTextFun(functionIn + ':');
              prototypes[getProtoIndex(functionIn), 2] := '1'; //sets the prototype to true
           end;
+      if lastFNIn = 'zahl' then
+          begin
+                          indentStack[lengthOfStack -1, 1] := functionIn; //name
+                          indentStack[lengthOfStack -1, 2] := 'zahl';     //type
+                          indentStack[lengthOfStack -1, 3] := Form1.getLineNumber(); //line_number
+                          Form1.setAssemblerTextFun(functionIn + ':');
+          end;
       if lastFNIn = 'wenn' then //if
           begin
              indentStack[lengthOfStack -1, 1] := intToStr(numberIf); //name (N-th if-Statement)
@@ -1318,7 +1315,7 @@ var proto: string;
 begin
    if wasInFunc = true then
         begin
-           Form1.setMistake('Zeile ' + Form1.getLineNumber() + ': Variablen dürfen nur am Anfang des Programmes deklariert werden!');
+           Form1.setMistake('Zeile ' + Form1.getLineNumber() + ': Prototypen dürfen nur am Anfang des Programmes deklariert werden!');
         end;
      if protoAllow then
          begin
@@ -1697,7 +1694,55 @@ begin
          end;
 end;
 
+procedure TCommand.handleVarOp();
+var varName   : string;
+var operation : string;
+begin
+    varName   := copy (m_fullLine, 0,pos ('=', m_fullLine) -1);
+    operation := copy (m_fullLine, pos ('=', m_fullLine) + 1, length (m_fullLine));
+    if copy (m_fullLine, pos ('=', m_fullLine) + 1) = '+1' then //incrementation
+     begin
+        incrementVars(varName);
+     end else if operation = '-1' then
+     begin
+        decrementVars(varName);
+     end else if protoExists(operation) then
+          begin
+             assignFunction(varName);
+          end;
+end;
 
+procedure TCommand.incrementVars(varName: string);
+begin
+   if varTable[getVarIndex(varName), 2] = 'zahl' then //if it's a text-variable
+    begin
+        Form1.setAssemblerTextFun('mov eax, dword [' + varName + ']');
+        Form1.setAssemblerTextFun('inc eax');
+        Form1.setAssemblerTextFun('mov [' + varName + '], eax');
+    end else
+        begin
+           Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Du kannst Textvariablen nicht inkrementieren!');
+        end;
+end;
+
+
+procedure TCommand.decrementVars(varName: string);
+begin
+   if varTable[getVarIndex(varName), 2] = 'zahl' then //if it's a text-variable
+    begin
+        Form1.setAssemblerTextFun('mov eax, dword [' + varName + ']');
+        Form1.setAssemblerTextFun('dec eax');
+        Form1.setAssemblerTextFun('mov [' + varName + '], eax');
+    end else
+        begin
+           Form1.setMistake ('Zeile ' + Form1.getLineNumber() + ': Du kannst Textvariablen nicht inkrementieren!');
+        end;
+end;
+
+procedure Tcommand.assignFunction(functionName: string);
+begin
+
+end;
 
 {$R *.lfm}
 

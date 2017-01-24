@@ -7,11 +7,10 @@
       <Unit0>
         <Filename Value="Compiler.lpr"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
-        <WindowIndex Value="-1"/>
-        <TopLine Value="-1"/>
-        <CursorPos X="-1" Y="-1"/>
+        <EditorIndex Value="1"/>
+        <CursorPos Y="20"/>
         <UsageCount Value="202"/>
+        <Loaded Value="True"/>
       </Unit0>
       <Unit1>
         <Filename Value="compiler_code.pas"/>
@@ -20,133 +19,136 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="626"/>
-        <CursorPos X="90" Y="1665"/>
+        <TopLine Value="162"/>
+        <CursorPos X="38" Y="179"/>
         <UsageCount Value="202"/>
         <Bookmarks Count="1">
-          <Item0 X="39" Y="1529"/>
+          <Item0 X="39" Y="1524"/>
         </Bookmarks>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit1>
     </Units>
-    <JumpHistory Count="29" HistoryIndex="28">
+    <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1019" TopLine="983"/>
+        <Caret Line="428" TopLine="400"/>
       </Position1>
       <Position2>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1020" TopLine="984"/>
+        <Caret Line="433" TopLine="406"/>
       </Position2>
       <Position3>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="990" TopLine="985"/>
+        <Caret Line="445" TopLine="427"/>
       </Position3>
       <Position4>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1010" Column="4" TopLine="983"/>
+        <Caret Line="447" TopLine="427"/>
       </Position4>
       <Position5>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="996" TopLine="983"/>
+        <Caret Line="448" TopLine="427"/>
       </Position5>
       <Position6>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1004" TopLine="983"/>
+        <Caret Line="262" TopLine="245"/>
       </Position6>
       <Position7>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1009" TopLine="983"/>
+        <Caret Line="263" TopLine="245"/>
       </Position7>
       <Position8>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1010" TopLine="983"/>
+        <Caret Line="265" TopLine="245"/>
       </Position8>
       <Position9>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1019" TopLine="983"/>
+        <Caret Line="267" TopLine="245"/>
       </Position9>
       <Position10>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1015" Column="74" TopLine="984"/>
+        <Caret Line="268" TopLine="245"/>
       </Position10>
       <Position11>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1021" TopLine="985"/>
+        <Caret Line="269" TopLine="245"/>
       </Position11>
       <Position12>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1022" TopLine="989"/>
+        <Caret Line="270" TopLine="245"/>
       </Position12>
       <Position13>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1023" TopLine="989"/>
+        <Caret Line="1702" Column="33" TopLine="1682"/>
       </Position13>
       <Position14>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1061" TopLine="1039"/>
+        <Caret Line="102" Column="30" TopLine="85"/>
       </Position14>
       <Position15>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="991" TopLine="971"/>
+        <Caret Line="1275" Column="23" TopLine="1258"/>
       </Position15>
       <Position16>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="996" TopLine="977"/>
+        <Caret Line="1706" TopLine="1683"/>
       </Position16>
       <Position17>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1028" TopLine="1020"/>
+        <Caret Line="1708" Column="58" TopLine="1683"/>
       </Position17>
       <Position18>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1031" Column="7" TopLine="1011"/>
+        <Caret Line="1240" Column="14" TopLine="1225"/>
       </Position18>
       <Position19>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1033" Column="47" TopLine="1017"/>
+        <Caret Line="1706" Column="59" TopLine="1683"/>
       </Position19>
       <Position20>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1035" TopLine="1020"/>
+        <Caret Line="1707" Column="84" TopLine="1683"/>
       </Position20>
       <Position21>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1034" TopLine="1020"/>
+        <Caret Line="1713" Column="35" TopLine="1683"/>
       </Position21>
       <Position22>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1041" TopLine="1023"/>
+        <Caret Line="1532" Column="5" TopLine="1515"/>
       </Position22>
       <Position23>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1052" TopLine="1029"/>
+        <Caret Line="1708" Column="53" TopLine="1683"/>
       </Position23>
       <Position24>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1053" Column="76" TopLine="1031"/>
+        <Caret Line="103" Column="47" TopLine="76"/>
       </Position24>
       <Position25>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="992" Column="9" TopLine="968"/>
+        <Caret Line="112" Column="63" TopLine="93"/>
       </Position25>
       <Position26>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1037" Column="105" TopLine="1008"/>
+        <Caret Line="1715" Column="42" TopLine="1689"/>
       </Position26>
       <Position27>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1029" TopLine="1008"/>
+        <Caret Line="1722" Column="113" TopLine="1695"/>
       </Position27>
       <Position28>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="1061" Column="41" TopLine="434"/>
+        <Caret Line="1721" Column="51" TopLine="1697"/>
       </Position28>
       <Position29>
         <Filename Value="compiler_code.pas"/>
-        <Caret Line="160" Column="40" TopLine="138"/>
+        <Caret Line="1717" Column="36" TopLine="1697"/>
       </Position29>
+      <Position30>
+        <Filename Value="Compiler.lpr"/>
+      </Position30>
     </JumpHistory>
   </ProjectSession>
 </CONFIG>

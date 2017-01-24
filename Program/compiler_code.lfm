@@ -8,7 +8,7 @@ object Form1: TForm1
   ClientWidth = 642
   OnClose = FormClose
   OnCreate = FormCreate
-  LCLVersion = '1.6.0.4'
+  LCLVersion = '1.6.2.0'
   object GroupBox1: TGroupBox
     Left = 0
     Height = 64
@@ -16,12 +16,12 @@ object Form1: TForm1
     Width = 642
     Align = alTop
     Caption = 'Tools'
-    ClientHeight = 45
-    ClientWidth = 640
+    ClientHeight = 46
+    ClientWidth = 634
     TabOrder = 0
     object Button1: TButton
       Left = 0
-      Height = 45
+      Height = 46
       Top = 0
       Width = 104
       Align = alLeft
@@ -31,7 +31,7 @@ object Form1: TForm1
     end
     object Button2: TButton
       Left = 104
-      Height = 45
+      Height = 46
       Top = 0
       Width = 104
       Align = alLeft
@@ -41,7 +41,7 @@ object Form1: TForm1
     end
     object Button3: TButton
       Left = 208
-      Height = 45
+      Height = 46
       Top = 0
       Width = 104
       Align = alLeft
@@ -59,7 +59,7 @@ object Form1: TForm1
     Font.Height = 13
     Font.Name = 'DejaVu Sans Mono'
     Font.Pitch = fpFixed
-    Font.Quality = fqNonAntialiased
+    Font.Quality = fqCleartype
     ParentColor = False
     ParentFont = False
     TabOrder = 1
@@ -495,6 +495,7 @@ object Form1: TForm1
     Lines.Strings = (
       ''
     )
+    Options = [eoAutoIndent, eoBracketHighlight, eoGroupUndo, eoPersistentCaret, eoScrollPastEol, eoSmartTabs, eoTabsToSpaces, eoTrimTrailingSpaces]
     VisibleSpecialChars = [vscSpace, vscTabAtLast]
     SelectedColor.BackPriority = 50
     SelectedColor.ForePriority = 50
@@ -558,12 +559,12 @@ object Form1: TForm1
     Width = 642
     Align = alClient
     Caption = 'Debug'
-    ClientHeight = 128
-    ClientWidth = 640
+    ClientHeight = 129
+    ClientWidth = 634
     TabOrder = 2
     inline SynEdit2: TSynEdit
       Left = 0
-      Height = 128
+      Height = 129
       Top = 0
       Width = 440
       Align = alLeft
@@ -1060,15 +1061,15 @@ object Form1: TForm1
     end
     object Splitter1: TSplitter
       Left = 440
-      Height = 128
+      Height = 129
       Top = 0
       Width = 5
     end
     inline SynEdit3: TSynEdit
       Left = 445
-      Height = 128
+      Height = 129
       Top = 0
-      Width = 195
+      Width = 189
       Align = alClient
       Font.Height = 13
       Font.Name = 'DejaVu Sans Mono'
