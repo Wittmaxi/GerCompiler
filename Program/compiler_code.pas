@@ -1374,6 +1374,7 @@ begin
                        protoExists := false; //if the array is empty, there obviously can't be a protoype already called like this
                     end else
                         begin
+                            momString := stringReplace (momString, ' ', '', [rfReplaceAll]);
                             lengthOf := length (prototypes) -1;
                             while counter <= lengthOf do //iterates throug the array and does some logic
                                   begin
