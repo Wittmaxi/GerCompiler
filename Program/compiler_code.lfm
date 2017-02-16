@@ -1,14 +1,15 @@
 object Form1: TForm1
-  Left = 538
+  Left = 408
   Height = 366
-  Top = 371
+  Top = 320
   Width = 642
   Caption = 'Compiler'
-  ClientHeight = 366
+  ClientHeight = 338
   ClientWidth = 642
+  Menu = MainMenu1
   OnClose = FormClose
   OnCreate = FormCreate
-  LCLVersion = '1.6.2.0'
+  LCLVersion = '1.6.0.4'
   object GroupBox1: TGroupBox
     Left = 0
     Height = 64
@@ -16,12 +17,12 @@ object Form1: TForm1
     Width = 642
     Align = alTop
     Caption = 'Tools'
-    ClientHeight = 46
-    ClientWidth = 634
+    ClientHeight = 43
+    ClientWidth = 640
     TabOrder = 0
     object Button1: TButton
       Left = 0
-      Height = 46
+      Height = 43
       Top = 0
       Width = 104
       Align = alLeft
@@ -31,7 +32,7 @@ object Form1: TForm1
     end
     object Button2: TButton
       Left = 104
-      Height = 46
+      Height = 43
       Top = 0
       Width = 104
       Align = alLeft
@@ -41,7 +42,7 @@ object Form1: TForm1
     end
     object Button3: TButton
       Left = 208
-      Height = 46
+      Height = 43
       Top = 0
       Width = 104
       Align = alLeft
@@ -554,17 +555,17 @@ object Form1: TForm1
   end
   object GroupBox2: TGroupBox
     Left = 0
-    Height = 147
+    Height = 119
     Top = 219
     Width = 642
     Align = alClient
     Caption = 'Debug'
-    ClientHeight = 129
-    ClientWidth = 634
+    ClientHeight = 98
+    ClientWidth = 640
     TabOrder = 2
     inline SynEdit2: TSynEdit
       Left = 0
-      Height = 129
+      Height = 98
       Top = 0
       Width = 440
       Align = alLeft
@@ -1061,15 +1062,15 @@ object Form1: TForm1
     end
     object Splitter1: TSplitter
       Left = 440
-      Height = 129
+      Height = 98
       Top = 0
       Width = 5
     end
     inline SynEdit3: TSynEdit
       Left = 445
-      Height = 129
+      Height = 98
       Top = 0
-      Width = 189
+      Width = 195
       Align = alClient
       Font.Height = 13
       Font.Name = 'DejaVu Sans Mono'
@@ -1610,8 +1611,8 @@ object Form1: TForm1
     Entity = False
     DollarVariables = False
     ActiveDot = False
-    left = 520
-    top = 96
+    left = 56
+    top = 64
   end
   object OpenDialog1: TOpenDialog
     DefaultExt = '.cmp'
@@ -1624,5 +1625,32 @@ object Form1: TForm1
     Filter = 'Compiler Dateien|*.cmp|Alle Dateien|*.*'
     left = 176
     top = 24
+  end
+  object MainMenu1: TMainMenu
+    left = 472
+    top = 65504
+    object MenuItem1: TMenuItem
+      Caption = 'Datei'
+      object MenuItem4: TMenuItem
+        Caption = 'Speichern'
+      end
+      object MenuItem6: TMenuItem
+        Caption = 'Laden'
+      end
+      object MenuItem5: TMenuItem
+        Caption = 'Neu'
+      end
+      object MenuItem7: TMenuItem
+        Caption = 'beenden'
+      end
+    end
+    object MenuItem2: TMenuItem
+      Caption = 'Compilierung'
+      object MenuItem3: TMenuItem
+        Caption = 'Beendigungsnachricht aktiv'
+        Checked = True
+        OnClick = MenuItem3Click
+      end
+    end
   end
 end

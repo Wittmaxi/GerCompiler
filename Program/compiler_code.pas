@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, SynEdit, SynHighlighterAny, SynCompletion, Forms,
-  Controls, Graphics, Dialogs, StdCtrls, ExtCtrls, LCLType;
+  Controls, Graphics, Dialogs, StdCtrls, ExtCtrls, LCLType, Menus;
 
 type
 
@@ -19,6 +19,14 @@ type
     Button3: TButton;
     GroupBox1: TGroupBox;
     GroupBox2: TGroupBox;
+    MainMenu1: TMainMenu;
+    MenuItem1: TMenuItem;
+    MenuItem2: TMenuItem;
+    MenuItem3: TMenuItem;
+    MenuItem4: TMenuItem;
+    MenuItem5: TMenuItem;
+    MenuItem6: TMenuItem;
+    MenuItem7: TMenuItem;
     OpenDialog1: TOpenDialog;
     SaveDialog1: TSaveDialog;
     Splitter1: TSplitter;
@@ -32,6 +40,7 @@ type
     procedure Button3Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormCreate(Sender: TObject);
+    procedure MenuItem3Click(Sender: TObject);
   private //private methods of TForm1
     procedure feedLines       ();
     procedure reset           ();
@@ -102,7 +111,7 @@ type
                    procedure handleVarOp  ();
                    procedure incrementVars(varName: string);
                    procedure decrementVars(varName: string);
-                   procedure assignFunction(functionName: string);
+                   procedure assignVars (varName: string);
                    //procedure checkvarComm(com: string);
              private //variables
                      var varTable : array of array [1..2] of string; //vartable Column 1 = name, Column 2 = type
@@ -283,7 +292,7 @@ begin
     setAssemblerText('global _start');
     setAssemblerText('_start:');
     setAssemblerBss ('section .bss');
-    setAssemblerBss ('cmp_input_buffer: resb 1');
+    setAssemblerBss ('cmp_input_buffer: resb 2');
     setAssemblerBss ('cmp_write_caret: resb 10'); //for writing Integers als ASCII
     setAssemblerBss ('cmp_buffer: resb 255'); //reserves 255 Bytes for this variable!
     Zeile.resetCommand();
@@ -353,16 +362,19 @@ begin
 
      //terminate run of the program without "segfaulting"! (System call sys_close)
      synEdit3.Lines.add('call func_main');
-     synEdit3.lines.add('mov eax, 4');  //Tells the user, the program has terminated
-     synEdit3.lines.add('mov ebx, 1');
-     synEdit3.lines.add('mov ecx, cmp_final_message');
-     synEdit3.lines.add('mov edx, cmp_final_message_len');
-     synEdit3.lines.add('int 80h');
-     synEdit3.Lines.add('mov eax, 3');
-     synEdit3.lines.add('mov ebx, 1');    //collects the garbage input
-     synEdit3.lines.add('mov ecx, cmp_buffer');
-     synEdit3.lines.add('mov edx, 1000');
-     synEdit3.lines.add('int 80h');
+     if MenuItem3.checked then
+     begin
+               synEdit3.lines.add('mov eax, 4');  //Tells the user, the program has terminated
+               synEdit3.lines.add('mov ebx, 1');
+               synEdit3.lines.add('mov ecx, cmp_final_message');
+               synEdit3.lines.add('mov edx, cmp_final_message_len');
+               synEdit3.lines.add('int 80h');
+               synEdit3.Lines.add('mov eax, 3');
+               synEdit3.lines.add('mov ebx, 1');    //collects the garbage input
+               synEdit3.lines.add('mov ecx, cmp_buffer');
+               synEdit3.lines.add('mov edx, 1000');
+               synEdit3.lines.add('int 80h');
+     end;
      synEdit3.Lines.add('mov eax, 1');    //finally quits
      synEdit3.Lines.add('mov ebx, 0');
      synEdit3.Lines.add('int 80h');
@@ -473,6 +485,11 @@ begin
     reset                ();
 end;
 
+procedure TForm1.MenuItem3Click(Sender: TObject);
+begin
+  menuItem3.checked:= not (menuItem3.checked);
+end;
+
 
 //###################################################################################################//
 /////////////////////////Implementation of the Methods of TLine ///////////////////////////////////////
@@ -532,7 +549,6 @@ begin
 end;
 
 procedure TLine.deleteComments();
-var momString: string;
 begin
   getStringLength();                                           //deletes evth. after the two charakters '//'
   delete (m_string, pos ('//', m_string), length (m_string));
@@ -1153,11 +1169,12 @@ begin
            if varTable [getVarIndex (varName), 2] = 'zahl' then //Integer-types
                begin
                   //BUG: The thing doesn't get parsed right. Solve: read in char for char and check for 0x0a..
-                  Form1.setAssemblerTextFun(';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;,,');
-                  Form1.setAssemblerTextFun('mov edx, 0000');
-                  Form1.setAssemblerTextFun('mov [cmp_buffer], DWORD 00000000');
+                  Form1.setAssemblerTextFun(';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;');
+                  Form1.setAssemblerTextFun('xor edx, edx');
+                  Form1.setAssemblerTextFun('xor ecx, ecx');
+                  Form1.setAssemblerTextFun('mov [cmp_buffer], DWORD 0000');
                   Form1.setAssemblerTextFun('input_loop' + intToStr(numberInputs) + ':');
-                  Form1.setAssemblerTextFun('mov [cmp_input_buffer], byte 0000');
+                  Form1.setAssemblerTextFun('mov [cmp_input_buffer], DWORD 0000');
                   Form1.setAssemblerTextFun('inc edx');
                   Form1.setAssemblerTextFun('push dx');
                   Form1.setAssemblerTextFun('mov eax, 3');
@@ -1695,20 +1712,46 @@ begin
 end;
 
 procedure TCommand.handleVarOp();
-var varName   : string;
-var operation : string;
+var varName     : string;
+var operation   : string;
+var stringBuffer: string;
+var counter     : integer = 1;
 begin
     varName   := copy (m_fullLine, 0,pos ('=', m_fullLine) -1);
     operation := copy (m_fullLine, pos ('=', m_fullLine) + 1, length (m_fullLine));
-    if copy (m_fullLine, pos ('=', m_fullLine) + 1) = '+1' then //incrementation
+    if copy (m_fullLine, pos ('=', m_fullLine) +1, 1) = '+' then //incrementation
      begin
-        incrementVars(varName);
-     end else if operation = '-1' then
+          incrementVars(varName);
+     end else if copy (m_fullLine, pos ('=', m_fullLine) +1, 1) = '-' then
      begin
-        decrementVars(varName);
-     end else if protoExists(operation) then
+          decrementVars(varName);
+     end else if varDoesExist(copy (m_fullLine, pos ('=', m_fullLine) +1, length (m_fullLine))) then
+     begin //Assignement of Variables.
+          assignVars (varName);
+     end else if (typeCheck(copy (m_fullLine, pos ('=', m_fullLine) + 1, 4)) = vartable [getVarIndex(varName), 2]) AND (vartable [getVarIndex(varName), 2] = 'zahl') then //if typecheck == zahl == vartable [] == zahl... I just missed out one statement to make it more short
+     begin
+          Form1.setAssemblerTextFun ('mov [' + varName + '], DWORD ' + copy (m_fullLine, pos ('=', m_fullLine) + 1, 4));
+     end else if m_fullLine[pos ('=', m_fullLine) + 1] = '"' then
           begin
-             assignFunction(varName);
+             stringBuffer := getTextInString(copy (m_fullLine, pos ('=', m_fullLine) +1, length (m_fullLine)));
+             if stringBuffer <> '' then
+                begin
+                   //Empties the variable
+                   while counter < 255 do
+                       begin
+                               Form1.setAssemblerTextFun ('mov BYTE[' + varName + ' + ' + intToStr(counter) + '], 0'); //inputs the single Char
+                               inc (counter);
+                       end;
+                   counter := 1;
+                   while (counter <=255) and (copy (stringBuffer, counter, 1) <> '') do
+                     begin
+                          Form1.setAssemblerTextFun ('mov [' + varName + ' + ' + intToStr(counter -1) + '], BYTE "' + copy (stringBuffer, counter, 1) + '"');
+                          inc (counter);
+                     end;
+                end else
+                    begin
+                       Form1.setMistake ('Zeile ' + Form1.getLineNumber () + ': Bei einer Textzuweisung wurde ein schliessender Hochstrich vergessen.');
+                    end;
           end;
 end;
 
@@ -1717,7 +1760,13 @@ begin
    if varTable[getVarIndex(varName), 2] = 'zahl' then //if it's a text-variable
     begin
         Form1.setAssemblerTextFun('mov eax, dword [' + varName + ']');
-        Form1.setAssemblerTextFun('inc eax');
+        if typeCheck(copy (m_fullLine, pos ('=+', m_fullLine) +2, 4)) = 'zahl' then
+           begin
+                Form1.setAssemblerTextFun('add eax, ' + copy (m_fullLine, pos ('=+', m_fullLine) +2, 4));
+           end else
+               begin
+                  Form1.setMistake('Zeile ' + Form1.getLineNumber () + ': Du kannst Zahlen nicht mit Texten addieren.');
+               end;
         Form1.setAssemblerTextFun('mov [' + varName + '], eax');
     end else
         begin
@@ -1731,7 +1780,13 @@ begin
    if varTable[getVarIndex(varName), 2] = 'zahl' then //if it's a text-variable
     begin
         Form1.setAssemblerTextFun('mov eax, dword [' + varName + ']');
-        Form1.setAssemblerTextFun('dec eax');
+        if typeCheck(copy(m_fullLine, pos ('=-', m_fullLine) +2, 4)) = 'zahl' then
+           begin
+                Form1.setAssemblerTextFun('sub eax, ' + copy (m_fullLine, pos ('=-', m_fullLine) +2, 4));
+           end else
+               begin
+                  Form1.setMistake('Zeile ' + Form1.getLineNumber () + ': Du kannst Zahlen nicht mit Texten addieren.');
+               end;
         Form1.setAssemblerTextFun('mov [' + varName + '], eax');
     end else
         begin
@@ -1739,9 +1794,30 @@ begin
         end;
 end;
 
-procedure Tcommand.assignFunction(functionName: string);
+procedure TCommand.assignVars (varName: string);
+var assignedVar: string;
+var counter: integer = 0;
 begin
-
+   assignedVar := copy (m_fullLine, pos ('=', m_fullLine) +1, length (m_fullLine));
+   if vartable[getVarIndex(varName), 2] = vartable [getVarIndex(assignedVar), 2] then //are the variables of the same type?
+      begin
+         if vartable[getVarIndex(varName), 2] = 'zahl' then
+            begin //vartype = int
+               Form1.setAssemblerTextFun ('mov eax, DWORD [' + assignedVar + ']');
+               Form1.setAssemblerTextFun ('mov DWORD [' + varName + '], eax');
+            end else
+            begin //vartype = string
+            while counter <=255 do
+              begin
+                   Form1.setAssemblerTextFun ('mov eax, [' + assignedVar + ' + ' + intToStr(counter) + ']');
+                   Form1.setAssemblerTextFun ('mov [' + varName + ' + ' + intToStr(counter) + '], eax');
+                   inc (counter);
+              end;
+            end;
+      end else
+          begin
+              Form1.setMistake ('Zeile ' + Form1.getLineNumber () + ': Es können nur Variablen mit dem gleichen Typ der anderen Variable zugewiesen werden');
+          end;
 end;
 
 {$R *.lfm}
